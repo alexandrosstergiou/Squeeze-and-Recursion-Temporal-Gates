@@ -3,8 +3,8 @@
 ![supported versions](https://img.shields.io/badge/python-3.5%2C3.6-brightgreen/?style=flat&logo=python&color=green)
 ![Library](https://img.shields.io/badge/library-PyTorch-blue/?style=flat&logo=pytorch&color=informational)
 ![GitHub license](https://img.shields.io/cocoapods/l/AFNetworking)
-![Fork](https://img.shields.io/github/forks/alexandrosstergiou/Saliency-Tubes-Visual-Explanations-for-Spatio-Temporal-Convolutions?style=social)
-![Star](https://img.shields.io/github/stars/alexandrosstergiou/Saliency-Tubes-Visual-Explanations-for-Spatio-Temporal-Convolutions?style=social)
+![Fork](https://img.shields.io/github/forks/alexandrosstergiou/Squeeze-and-Recursion-Temporal-Gates?style=social)
+![Star](https://img.shields.io/github/stars/alexandrosstergiou/Squeeze-and-Recursion-Temporal-Gates?style=social)
 
 
 --------------------------------------------------------------------------------
