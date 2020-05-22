@@ -198,17 +198,17 @@ We report the loss, top-1 and top-5 accuracy during each logging interval during
 We also provide a monitor for speeds in terms of video-reading from disk (CPU), forward pass (GPU) and backprop (GPU). Speeds are reported as clips per second. You can have a look at class `SpeedMonitor` in `train/callbacks.py` for more information Overall the output at each logging interval should look like:
 
 <center>
-... Speed (r=<span style="color:#a1e2b7">1.53e+5</span> f=<span style="color:#f3e27a">9.84e+1</span> b=<span style="color:#ff7d75">1.78e+1</span>) ...
+... Speed (r=<a class="text-green">1.53e+5</sa> f=<a class="text-yellow">9.84e+1</a> b=<a class="text-red">1.78e+1</a>) ...
 </center>
 
 
-Colours are used in order to give a quick understanding if the speed is in general <span style="color:#a1e2b7">fast</span>, <span style="color:#f3e27a">average</span> or <span style="color:#ff7d75">slow</span>. The limits for each of the speeds are defined as:
+Colours are used in order to give a quick understanding if the speed is in general <a class="text-green">fast</a>, <a class="text-yellow">average</a> or <a class="text-red">slow</a>. The limits for each of the speeds are defined as:
 
-- reading (r)  <span style="color:#ff7d75">100</span> < <span style="color:#f3e27a">3000</span> < <span style="color:#a1e2b7">inf</span>
+- reading (r)  <a class="text-red">100</a> < <a class="text-yellow">3000</a> < <a class="text-green">inf</a>
 
-- forward (f)  <span style="color:#ff7d75">50</span> < <span style="color:#f3e27a">300</span> < <span style="color:#a1e2b7">inf</span>
+- forward (f)  <a class="text-red">50</a> < <a class="text-yellow">300</a> < <a class="text-green">inf</a>
 
-- backward (r)  <span style="color:#ff7d75">20</span> < <span style="color:#f3e27a">200</span> < <span style="color:#a1e2b7">inf</span>
+- backward (r)  <a class="text-red">20</a> < <a class="text-yellow">200</a> < <a class="text-green">inf</a>
 
 **Note that the biggest factor for speeds is the video/clip size rather than the video size**. Reading speeds will fall at average/slow speeds only during `Dataloader` initialisations.
 
