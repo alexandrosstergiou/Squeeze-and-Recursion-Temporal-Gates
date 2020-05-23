@@ -12,7 +12,9 @@
 ## Abstract
 Temporal motion has been one of the essential components for the effective recognition of actions in videos. Time information and features are primarily extracted hierarchically through small sequences of few frames, in modern models, with the use of 3D convolutions. In this paper, we propose a method that can learn general changes of features across time, making activations not bound to their temporal locality, by also include a general notion of their feature motions. Through this recalibration of temporal feature cues across multiple frames, 3D-CNN models are capable of using features that are prevalent over different time segments, while being less dependent on their temporal receptive fields. We present improvements on both high and low capacity models, with the largest benefits being observed in low-memory models, as most of their current drawbacks rely on their poor generalisation capabilities because of the low number and complexity of their features. We present average improvements, over the corresponding state of the art models, in the range of x\% on Kinetics-700 (K-700), x\% on Moments in Time (MiT), 2.73\% on Human Actions Clips and Segments (HACS), x \% on HMDB-51 and x\% on UCF-101.  
 
+
 <p align="center">
+<img src="./figures/Squeeze_and_Recursion_Proof_of_Concept.png" width="700" height="370" />
 <img src="./figures/SR.png" width="700" height="150" />
 </p>
 
