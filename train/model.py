@@ -177,8 +177,7 @@ class static_model(object):
 
     def forward(self, data, target):
         # Data conversion
-        # data = data.float().cuda()
-        data = data.half().cuda()
+        data = data.float().cuda()
         target = target.cuda()
 
         # Create autograd Variables

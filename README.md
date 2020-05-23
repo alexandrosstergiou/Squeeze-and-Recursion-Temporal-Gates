@@ -179,13 +179,70 @@ We additionally use a Multigrid training schedule for both improving generalisat
 
 ## Usage
 
+Training for each of the datasets is done through the homonym scripts.
+
 #### Examples
+
+**Training from scratch:** Training from scratch can be done by simply calling the script for the specific dataset. The two call argument that you **should** include are the `dataset` for the directory of the dataset and `network` for the architecture to train.
+```
+python train_hacs.py --network srtg_r3d_34 --dataset /media/alex/m2ssd_vol1/data/HACS_videos/ --clip-size 224 --gpus 4 --lr-base 0.1 --batch-size 48
+```
+
+**Resuming training:** You can also resume training by loading previous states and specifying the epoch from which to continue after. You can specify the directory of the model to load weights from with `pretrained_3d`. You can load models from different disks with the absolute path. Secondly, you should specify the epoch from which to resume training from with `resume-epoch`.
+```
+python train_hacs.py --network srtg_r3d_50 --dataset /media/alex/m2ssd_vol1/data/HACS_videos/ --clip-size 224 --gpus 4 --pretrained_3d results/HACS/srtg_r3d_50_gates_False/srtg_r3d_50_ep-0020.pth --resume-epoch 21 --lr-base 0.1 --batch-size 32
+```
+
+**Weight initialisation/Transfer learning:** It is possible to initialise weights or use pre-trained networks. Similarly to resuming training if the network architecture includes some variations (e.g. the number of class neurones) only the corresponding weights will be loaded. If Transfer learning, you can additionally use the `fine-tune` call argument to decrease the learning rate used for convolution weights while maintaining the same base learning rate for the added layers.
+```
+python train_kinetics.py --network srtg_r3d_34 --dataset /media/alex/m2ssd_vol1/data/Kinetics_videos/ --variant 700 --clip-size 224 --gpus 4 --pretrained_3d results/HACS/srtg_r3d_34_gates_False/srtg_r3d_34_ep-0080.pth --fine-tune True --lr-base 0.1 --batch-size 48
+```
 
 #### Calling arguments
 
+The following arguments are used and hould be included at the parser of any training script.
+
+|Argument name | functionality|
+| :--------------: | ------- |
+| `debug-mode` | Boolean for additional logging while debugging. Especially useful for cases that custom implementations or data are used. |
+| `dataset` | String for the full path of the dataset. It is suggested to use the explicit directory that the dataset is stored under. Could also be used to load a dataset in a different disk/location. |
+| `clip-length` | Integer determining the number of frames to be used for each video. |
+| `clip-size` | Integer for the spatial size (height \& width) of each frame.|
+| `train-frame-inteval` | Integer for the frame sampling interval during training.|
+| `val-frame-inteval` | Integer for the frame sampling interval during evaluation.|
+| `task-name`| String for cases that multi-tasking in enabled (not currently fully implemented so left empty by default).|
+| `model-dir` | String for the directory to save the models in `.pth` files as well as the accuracies during training and testing. |
+| `log-file`| String for the logging file. If left empty as default, a standard named logging file is created.|
+| `gpus` | Integer for the number of GPUs to be used. |
+| `network`| String for the name of the model to be used.|
+| `pretrained-3d`| Integer for the case that the weights are to be initialised from some previously trained model. As a non-strict weight loading implementation exists, networks that are trained on either different datasets (with different number of classes) or with additional/lesser layers can also be loaded. The weights that will be loaded are only the ones that both (1) share the same names and (2) have the same channel sizes.|
+| `fine-tune`| Boolean for the case that the model is to be fine tuned. This essentially translated to the convolutional weights learning rate being smaller than that of the classifier's (FC) neurones. So the larger updates are done in the FC layer.|
+| `resume-epoch`| Integer if the model is to be resumed from a specific epoch. Useful in cases where (1) The model training was interrupted, (2) Some quick parameter tests need to be made at a specific test, (3) To quickly check the learning rate schedule.|
+| `batch-size`| Integer for the base size of the batch.|
+| `long-cycles`| Boolean for enabling Long cycles |
+| `short-cycles`| Boolean for enabling Short cycles |
+| `lr-base`| Float for the initial learning rate. This is the learning rate based on which the cycle learning rate is changes and to which the decrease is applied at each scheduler step. |
+| `lr-steps` | List for the epochs for which the learning rate will decrease/change. |
+| `lr-factor` | Float or Int with which the learning rate changes. |
+| `save-frequency`| Integer for when the model to be save in a `.pth` file.|
+| `end-epoch`| Integer for the number of eposch.|
+|`random-seed`| Integer number for seeding in any random operation (e.g. data shuffling)|
+
+**Spacial call arguments**
+
+The are some cases were additional arguments are used based on the structures or specific datasets:
+
+|Argument name | script name |functionality|
+| :--------------:| :----: | ------- |
+|`variant`| `train_kinetics.py` | Integer for the Kinetics dataset type to be used (e.g. Mini-Kinetics with 200 classes or 400, 600, 700)|
+
 #### Pre-trained weights
 
+We are will be making the pre-trained SRTG models weights available along with oncoming repo updates.
+
 #### Switching from half to single point precision
+
+We are currently using NVIDIA's [`apex`](https://github.com/NVIDIA/apex) PyTorch extension for training our models with mixed precision. By default we use Automatic Mixed Precision (amp) for simplicity with `opt_level` of `01`. This patches most of the PyTorch functions casting their types from `float32` -> `float16`. Exceptions include both SoftMax and Normalisation methods that are kept in `float32` instead.
 
 ## Monitoring
 
@@ -198,17 +255,17 @@ We report the loss, top-1 and top-5 accuracy during each logging interval during
 We also provide a monitor for speeds in terms of video-reading from disk (CPU), forward pass (GPU) and backprop (GPU). Speeds are reported as clips per second. You can have a look at class `SpeedMonitor` in `train/callbacks.py` for more information Overall the output at each logging interval should look like:
 
 <center>
-... Speed (r=<a class="text-green">1.53e+5</sa> f=<a class="text-yellow">9.84e+1</a> b=<a class="text-red">1.78e+1</a>) ...
+... Speed (r=<span style="color:#a1e2b7">1.53e+5</span> f=<span style="color:#f3e27a">9.84e+1</span> b=<span style="color:#ff7d75">1.78e+1</span>) ...
 </center>
 
 
-Colours are used in order to give a quick understanding if the speed is in general <a class="text-green">fast</a>, <a class="text-yellow">average</a> or <a class="text-red">slow</a>. The limits for each of the speeds are defined as:
+Colours are used in order to give a quick understanding if the speed is in general <span style="color:#a1e2b7">fast</span>, <span style="color:#f3e27a">average</span> or <span style="color:#ff7d75">slow</span>. The limits for each of the speeds are defined as:
 
-- reading (r)  <a class="text-red">100</a> < <a class="text-yellow">3000</a> < <a class="text-green">inf</a>
+- reading (r)  <span style="color:#ff7d75">(red) 100</span> < <span style="color:#f3e27a">(yellow) 3000</span> < <span style="color:#a1e2b7">(green) inf</span>
 
-- forward (f)  <a class="text-red">50</a> < <a class="text-yellow">300</a> < <a class="text-green">inf</a>
+- forward (f)  <span style="color:#ff7d75">(red) 50</span> < <span style="color:#f3e27a">(yellow) 300</span> < <span style="color:#a1e2b7">(green) inf</span>
 
-- backward (r)  <a class="text-red">20</a> < <a class="text-yellow">200</a> < <a class="text-green">inf</a>
+- backward (r)  <span style="color:#ff7d75">(red) 20</span> < <span style="color:#f3e27a">(yellow) 200</span> < <span style="color:#a1e2b7">(green) inf</span>
 
 **Note that the biggest factor for speeds is the video/clip size rather than the video size**. Reading speeds will fall at average/slow speeds only during `Dataloader` initialisations.
 

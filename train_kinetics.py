@@ -8,7 +8,6 @@ import logging
 import argparse
 import torch
 import torch.nn.parallel
-import torch.distributed as dist
 
 import dataset
 from train_model import train_model
@@ -72,13 +71,6 @@ parser.add_argument('--end-epoch', type=int, default=10000,
                     help="maxmium number of training epoch")
 parser.add_argument('--random-seed', type=int, default=1,
                     help='random seed (default: 1)')
-# distributed training
-parser.add_argument('--backend', default='nccl', type=str, choices=['gloo', 'nccl'],
-                    help='Name of the backend to use')
-parser.add_argument('--world-size', default=1, type=int,
-                    help='number of distributed processes')
-parser.add_argument('--dist-url', default=None, type=str,
-                    help='url used to set up distributed training')
 parser.add_argument('--variant', default=700, type=int, choices=[200,400,600,700],
                     help='The kinetics dataset type to be used')
 
