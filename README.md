@@ -58,6 +58,14 @@ $ git clone https://github.com/alexandrosstergiou/Squeeze-and-Recursion-Temporal
 
 ## Datasets
 
+A custom format is used for all label files for each of the datasets. If using (1) your own data or (2) converting a file please ensure that the data are saved to `.csv` files with the following format:
+
+|`label`|`youtube_id`/`id`|`time_start`(optional)|`time_end`(optional)|`split`|
+|-----|------|-----|-----|----|
+
+##### You can also download the already converted `.csv` label files for the Kinetics (Mini, 400, 600, 700), MiT, HACS, UCF101, HMDB51 \& Diving48 from [[this link]](https://drive.google.com/open?id=1s4DbRydBQ--22J4DNbUUXDLqNvuXi_dj)
+
+
 We include training/data loading scripts for six action/video recognition datasets:
 
 - **Human Action Clips and Segments (HACS)** [[link]](http://hacs.csail.mit.edu/) : It includes a total of roughly 500K clip segments sampled over 50K videos. you can download the dataset  from [this link](http://hacs.csail.mit.edu/dataset/HACS_v1.1.1.zip), or alternatively visit the [project's website](http://hacs.csail.mit.edu/).

@@ -352,7 +352,7 @@ class VideoIter(data.Dataset):
                 logging.info("VideoIter:: Processed {:d}/{:d} videos".format(found_videos,i, ))#str(processed_ids).strip('[]')))
                 processed_ids = []
 
-            # Account for folder name of different datasets (e.g. Kinetics & HACS => `youtube_id` , UCF-101 & HMDB-51 => `id`)
+            # Account for folder name of different datasets (e.g. Kinetics, MiT & HACS => `youtube_id` , UCF-101 & HMDB-51 => `id`)
             if ('youtube_id' in line):
                 id = line.get('youtube_id').strip()
             else:
