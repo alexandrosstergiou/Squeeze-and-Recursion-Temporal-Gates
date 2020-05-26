@@ -41,10 +41,14 @@ Ensure that the following packages are installed in your machine:
 
 You can intall all of the packages with the following command:
 ```
-$ pip install apex coloredlogs ffmpeg-python imgaug opencv-python torch torchvision youtube-dl
+$ pip install coloredlogs ffmpeg-python imgaug opencv-python torch torchvision youtube-dl
 ```
 
-! Disclaimer: This repository is heavily structurally influenced on Yunpeng Chen's MFNet [repo](https://github.com/cypw/PyTorch-MFNet)
+`Apex` can be downloaded based on the official [[github repo]](https://github.com/NVIDIA/apex)
+
+> If case for calculating FLOPs/GMACs yourself it's suggested to use Vladislav Sovrasov's repo [[link]](https://github.com/sovrasov/flops-counter.pytorch)
+
+> ***! Disclaimer:*** This repository is heavily structurally influenced on Yunpeng Chen's MFNet repo [[link]](https://github.com/cypw/PyTorch-MFNet)
 
 ## Installation
 
@@ -63,7 +67,7 @@ A custom format is used for all label files for each of the datasets. If using (
 |`label`|`youtube_id`/`id`|`time_start`(optional)|`time_end`(optional)|`split`|
 |-----|------|-----|-----|----|
 
-##### You can also download the already converted `.csv` label files for the Kinetics (Mini, 400, 600, 700), MiT, HACS, UCF101, HMDB51 \& Diving48 from [[this link]](https://drive.google.com/open?id=1s4DbRydBQ--22J4DNbUUXDLqNvuXi_dj)
+##### You can also download the already converted `.csv` label files for the Kinetics (Mini, 400, 600, 700), MiT, HACS, UCF101, HMDB51 \& Diving48 from [[this link]](https://drive.google.com/open?id=1ySOhq2Im6Ac19EaNwiMX0azzdC-xfkgh)
 
 
 We include training/data loading scripts for six action/video recognition datasets:
