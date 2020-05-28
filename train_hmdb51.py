@@ -6,31 +6,32 @@ import json
 import socket
 import logging
 import argparse
+
 import torch
 import torch.nn.parallel
+import torch.distributed as dist
 
 import dataset
 from train_model import train_model
 from network.symbol_builder import get_symbol
 
-# Create main parser
 parser = argparse.ArgumentParser(description="PyTorch Video Classification Parser")
 # debug
 parser.add_argument('--debug-mode', type=bool, default=True,
                     help="print all setting for debugging.")
-parser.add_argument('--dataset', default='Kinetics',
+parser.add_argument('--dataset', default='HMDB51',
                     help="path to dataset")
 parser.add_argument('--clip-length', default=16,
                     help="define the length of each input sample.")
 parser.add_argument('--clip-size', default=256,
                     help="define the size of each input sample.")
-parser.add_argument('--train-frame-interval', type=int, default=[1,2,2,3],
+parser.add_argument('--train-frame-interval', type=int, default=2,
                     help="define the sampling interval between frames.")
 parser.add_argument('--val-frame-interval', type=int, default=2,
                     help="define the sampling interval between frames.")
 parser.add_argument('--task-name', type=str, default='',
                     help="name of current task, leave it empty for using folder name")
-parser.add_argument('--model-dir', type=str, default="./results/KINETICS-",
+parser.add_argument('--model-dir', type=str, default="./exps/models",
                     help="set logging file.")
 parser.add_argument('--log-file', type=str, default="",
                     help="set logging file.")
@@ -38,41 +39,39 @@ parser.add_argument('--log-file', type=str, default="",
 parser.add_argument('--gpus', type=str, default="0,1,2,3,4,5,6,7",
                     help="define gpu id")
 # algorithm
-parser.add_argument('--network', type=str, default='r3d_50',
+parser.add_argument('--network', type=str,
                     help="chose the base network")
 # initialization with priority (the next step will overwrite the previous step)
 # - step 1: random initialize
-# - step 2: load the 3D pretrained model if `pretrained_3d' is defined
-# - step 3: resume if `resume_epoch' >= 0
-
-
-parser.add_argument('--pretrained_3d', type=str,  default=None,
+# - step 2: load the 2D pretrained model if `pretrained_2d' is True
+# - step 3: load the 3D pretrained model if `pretrained_3d' is defined
+# - step 4: resume if `resume_epoch' >= 0
+parser.add_argument('--pretrained_3d', type=str,
                     help="load default 3D pretrained model.")
-# optimization
-parser.add_argument('--fine-tune', type=bool, default=False,
-                    help="resume training and then fine tune the classifier")
 parser.add_argument('--resume-epoch', type=int, default=-1,
                     help="resume train")
-parser.add_argument('--batch-size', type=int, default=16,
+# optimization
+parser.add_argument('--fine-tune', type=bool, default=True,
+                    help="apply different learning rate for different layers")
+parser.add_argument('--batch-size', type=int, default=32,
                     help="batch size")
-parser.add_argument('--long-cycles', type=bool, default=True,
+parser.add_argument('--long-cycles', type=bool, default=False,
                     help="Enebling long cycles for batches")
-parser.add_argument('--short-cycles', type=bool, default=True,
+parser.add_argument('--short-cycles', type=bool, default=False,
                     help="Enebling short cycles for batches")
-parser.add_argument('--lr-base', type=float, default=0.05,
+parser.add_argument('--lr-base', type=float, default=0.1,
                     help="learning rate")
-parser.add_argument('--lr-steps', type=list, default=[30,60,75,90],
+parser.add_argument('--lr-steps', type=list, default=[15,30,40],
                     help="number of samples to pass before changing learning rate") # 1e6 million
 parser.add_argument('--lr-factor', type=float, default=0.1,
                     help="reduce the learning with factor")
 parser.add_argument('--save-frequency', type=float, default=1,
                     help="save once after N epochs")
-parser.add_argument('--end-epoch', type=int, default=10000,
+parser.add_argument('--end-epoch', type=int, default=100,
                     help="maxmium number of training epoch")
 parser.add_argument('--random-seed', type=int, default=1,
                     help='random seed (default: 1)')
-parser.add_argument('--variant', default=700, type=int, choices=[200,400,600,700],
-                    help='The kinetics dataset type to be used')
+
 
 '''
 ---  S T A R T  O F  F U N C T I O N  A U T O F I L L  ---
@@ -93,7 +92,6 @@ def autofill(args):
         else:
             args.log_file = ".{}_at-{}.log".format(args.task_name, socket.gethostname())
     # fixed
-    args.model_dir += str(args.variant)
     args.model_dir = os.path.join(args.model_dir,args.network)
     args.model_prefix = os.path.join(args.model_dir, args.network)
 
@@ -139,6 +137,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args = autofill(args)
 
+
     set_logger(log_file=args.log_file, debug_mode=args.debug_mode)
     logging.info("Using pytorch {} ({})".format(torch.__version__, torch.__path__))
     logging.info("Start training with args:\n" +
@@ -151,10 +150,11 @@ if __name__ == "__main__":
     torch.manual_seed(args.random_seed)
     torch.cuda.manual_seed(args.random_seed)
 
-    # load dataset related configuration
-    dataset_cfg = dataset.get_config(name=args.dataset,variant=int(args.variant))
 
-    # create model with all parameters initialised
+    # load dataset related configuration<
+    dataset_cfg = dataset.get_config(name=args.dataset)
+
+    # creat model with all parameters initialized
     assert (not args.fine_tune or not args.resume_epoch < 0), \
             "args: `resume_epoch' must be defined for fine tuning"
     net, input_conf = get_symbol(name=args.network,
@@ -166,7 +166,9 @@ if __name__ == "__main__":
     kwargs.update(dataset_cfg)
     kwargs.update({'input_conf': input_conf})
     kwargs.update(vars(args))
-    train_model(sym_net=net, name='KINETICS-'+str(args.variant),net_name=args.network, dataset_location=args.dataset, **kwargs)
+    args.short_cycles=False
+    args.long_cycles=False
+    train_model(sym_net=net, name='HMDB51', net_name=args.network, dataset_location=args.dataset, enable_long_cycles=args.long_cycles, enable_short_cycles=args.short_cycles, **kwargs)
 '''
 ---  E N D  O F  M A I N  F U N C T I O N  ---
 '''

@@ -300,6 +300,7 @@ class model(static_model):
 
 
     def fit(self, train_iter, optimiser, lr_scheduler, long_short_steps_dir,
+            no_cycles,
             eval_iter=None,
             batch_shape=(24,16,224,224),
             workers=24,
@@ -339,8 +340,16 @@ class model(static_model):
         #val_writer = csv.writer(f_val, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         val_writer.write(('Epoch', 'Top1', 'Top5','Loss'))
 
+        cycles = True
+
 
         for i_epoch in range(epoch_start, epoch_end):
+
+            if (no_cycles):
+                logging.info('No cycles selected')
+                train_loader = iter(torch.utils.data.DataLoader(train_iter,batch_size=batch_shape[0], shuffle=True,num_workers=workers, pin_memory=False))
+                cycles = False
+
             self.callback_kwargs['epoch'] = i_epoch
             epoch_start_time = time.time()
 
@@ -410,54 +419,58 @@ class model(static_model):
                 if (h%2 != 0): h+=1
                 if (w%2 != 0): w+=1
 
-                train_iter.size_setter(new_size=(t,h,w))
+                if cycles:
+                    train_iter.size_setter(new_size=(t,h,w))
 
-                batch_s = (t,h,w)
-                if (batch_s not in active_batches.values()):
-                    logging.info('Creating dataloader for batch of size ({},{},{},{})'.format(b,*batch_s))
-                    # Ensure rendomisation
-                    train_iter.shuffle(i_epoch+i_batch)
-                    # create dataloader corresponding to the created dataset.
-                    train_loader = torch.utils.data.DataLoader(train_iter,batch_size=b, shuffle=True,num_workers=workers, pin_memory=False)
-                    if loader_id in train_loaders:
-                        del train_loaders[loader_id]
-                    train_loaders[loader_id]=iter(train_loader)
-                    if loader_id in active_batches:
-                        del active_batches[loader_id]
-                    active_batches[loader_id]=batch_s
+                    batch_s = (t,h,w)
+                    if (batch_s not in active_batches.values()):
+                        logging.info('Creating dataloader for batch of size ({},{},{},{})'.format(b,*batch_s))
+                        # Ensure rendomisation
+                        train_iter.shuffle(i_epoch+i_batch)
+                        # create dataloader corresponding to the created dataset.
+                        train_loader = torch.utils.data.DataLoader(train_iter,batch_size=b, shuffle=True,num_workers=workers, pin_memory=False)
+                        if loader_id in train_loaders:
+                            del train_loaders[loader_id]
+                        train_loaders[loader_id]=iter(train_loader)
+                        if loader_id in active_batches:
+                            del active_batches[loader_id]
+                        active_batches[loader_id]=batch_s
+                        gc.collect()
+
+
+                    try:
+                        if data is not None:
+                            del data
+                        if target is not None:
+                            del target
+                        gc.collect()
+                        sum_read_elapse = time.time()
+                        data,target = next(train_loaders[loader_id])
+                        sum_read_elapse = time.time() - sum_read_elapse
+                    except:
+                        # Reinitialise if used up
+                        logging.warning('Re-creating dataloader for batch of size ({},{},{},{})'.format(b,*batch_s))
+                        # Ensure rendomisation
+                        train_iter.shuffle(i_epoch+i_batch)
+                        train_loader = torch.utils.data.DataLoader(train_iter,batch_size=b, shuffle=True,num_workers=workers, pin_memory=False)
+
+                        if loader_id in train_loaders:
+                            del train_loaders[loader_id]
+                        train_loaders[loader_id]=iter(train_loader)
+                        if loader_id in active_batches:
+                            del active_batches[loader_id]
+                        active_batches[loader_id]=batch_s
+                        gc.collect()
+                        sum_read_elapse = time.time()
+                        data,target = next(train_loaders[loader_id])
+                        sum_read_elapse = time.time() - sum_read_elapse
+
+
                     gc.collect()
-
-
-                try:
-                    if data is not None:
-                        del data
-                    if target is not None:
-                        del target
-                    gc.collect()
+                else:
                     sum_read_elapse = time.time()
-                    data,target = next(train_loaders[loader_id])
+                    data,target = next(train_loader)
                     sum_read_elapse = time.time() - sum_read_elapse
-                except:
-                    # Reinitialise if used up
-                    logging.warning('Re-creating dataloader for batch of size ({},{},{},{})'.format(b,*batch_s))
-                    # Ensure rendomisation
-                    train_iter.shuffle(i_epoch+i_batch)
-                    train_loader = torch.utils.data.DataLoader(train_iter,batch_size=b, shuffle=True,num_workers=workers, pin_memory=False)
-
-                    if loader_id in train_loaders:
-                        del train_loaders[loader_id]
-                    train_loaders[loader_id]=iter(train_loader)
-                    if loader_id in active_batches:
-                        del active_batches[loader_id]
-                    active_batches[loader_id]=batch_s
-                    gc.collect()
-                    sum_read_elapse = time.time()
-                    data,target = next(train_loaders[loader_id])
-                    sum_read_elapse = time.time() - sum_read_elapse
-
-
-                gc.collect()
-
 
                 self.callback_kwargs['batch'] = i_batch
 
@@ -569,6 +582,7 @@ class model(static_model):
 
                     sum_forward_elapse = time.time() - sum_forward_elapse
 
+
                     metrics.update([output.data.cpu() for output in outputs],
                                     target.cpu(),
                                    [loss.data.cpu() for loss in losses])
@@ -581,7 +595,7 @@ class model(static_model):
 
                     sum_sample_inst += data.shape[0]
 
-                    if (i_batch%100 == 0):
+                    if (i_batch%50 == 0):
                         val_top1_avg = sum(val_top1_sum)/(i_batch+1)
                         val_top5_avg = sum(val_top5_sum)/(i_batch+1)
                         val_loss_avg = sum(val_loss_sum)/(i_batch+1)

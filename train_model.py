@@ -65,7 +65,7 @@ def train_model(sym_net, name, model_prefix, input_conf,
                 clip_length=32, clip_size=224, train_frame_interval=2, val_frame_interval=2,
                 resume_epoch=-1, batch_size=16, save_frequency=1,
                 lr_base=0.01, lr_factor=0.1, lr_steps=[50,100,150],
-                long_cycles=True, short_cycles=True, end_epoch=300,
+                enable_long_cycles=True, enable_short_cycles=True, end_epoch=300,
                 pretrained_3d=None, fine_tune=False, dataset_location='Kinetics', net_name='r3d_50', gpus=4,
                 **kwargs):
 
@@ -177,19 +177,16 @@ def train_model(sym_net, name, model_prefix, input_conf,
 
     # load params from pretrained 3d network
     if pretrained_3d:
-        if resume_epoch < 0:
-            assert os.path.exists(pretrained_3d), "cannot locate: `{}'".format(pretrained_3d)
-            logging.info("Initialiser:: loading model states from: `{}'".format(pretrained_3d))
-            checkpoint = torch.load(pretrained_3d)
-            net.load_state(checkpoint['state_dict'], strict=False)
-        else:
-            logging.info("Initialiser:: skip loading model states from: `{}'"
-                + ", since it's going to be overwrited by the resumed model".format(pretrained_3d))
+        assert os.path.exists(pretrained_3d), "cannot locate: `{}'".format(pretrained_3d)
+        logging.info("Initialiser:: loading model states from: `{}'".format(pretrained_3d))
+        checkpoint = torch.load(pretrained_3d)
+        net.load_state(checkpoint['state_dict'], strict=False)
+
 
     num_steps = train_length // batch_size
 
     # Long Cycle steps
-    if (long_cycles):
+    if (enable_long_cycles):
 
         count = 0
         index = 0
@@ -224,7 +221,7 @@ def train_model(sym_net, name, model_prefix, input_conf,
         num_steps = count
 
     # Short Cycle steps
-    if (short_cycles):
+    if (enable_short_cycles):
 
         # Iterate for *every* batch
         i = 0
@@ -249,7 +246,7 @@ def train_model(sym_net, name, model_prefix, input_conf,
 
     # Split the batch number to four for every change in the long cycles
     long_steps = None
-    if (long_cycles):
+    if (enable_long_cycles):
         step = num_steps//4
         long_steps = list(range(num_steps))[0::step]
         num_steps = long_steps[-1]
@@ -269,10 +266,12 @@ def train_model(sym_net, name, model_prefix, input_conf,
         epoch_start = 0
         step_counter = 0
     else:
-        try:
-            net.load_checkpoint(epoch=resume_epoch, optimizer=optimiser)
-        except Exception:
-            logging.warning('Initialiser:: No previous checkpoint found in the directory! You can specify the path explicitly with `pretrained_3d` argument.')
+        # Try to load previous state dict in case `pretrained_3d` is None
+        if not pretrained_3d:
+            try:
+                net.load_checkpoint(epoch=resume_epoch, optimizer=optimiser)
+            except Exception:
+                logging.warning('Initialiser:: No previous checkpoint found in the directory! You can specify the path explicitly with `pretrained_3d` argument.')
         epoch_start = resume_epoch
         step_counter = epoch_start * num_steps
 
@@ -322,6 +321,7 @@ def train_model(sym_net, name, model_prefix, input_conf,
             eval_iter=eval_loader,
             batch_shape=(int(batch_size),int(clip_length),int(clip_size),int(clip_size)),
             workers=8,
+            no_cycles=(not(enable_long_cycles) and not(enable_short_cycles)),
             optimiser=optimiser,
             long_short_steps_dir=iteration_steps,
             lr_scheduler=lr_scheduler,
