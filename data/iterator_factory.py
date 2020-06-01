@@ -27,7 +27,7 @@ from . import video_sampler as sampler
 
     [Args]
         - data_root: String containing the complete path of the dataset. Note that the path should correspond to
-        the parent path of where the dataset is. Defaults to `/media/agstergiou/m2ssd_2TB`.
+        the parent path of where the dataset is. Defaults to `/media/user/disk0`.
         - clip_length: Integer for the number of frames to sample per video. Defaults to 8.
         - clip_size: Integer for the width and height of the frames in the video. Defaults to 256.
         - val_clip_length: Integer for the number of frames in the validation clips. If None, they
@@ -45,7 +45,7 @@ from . import video_sampler as sampler
     [Returns]
         - Tuple for training VideoIter object and validation VideoIter object.
 '''
-def get_diving48(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
+def get_diving48(data_root=os.path.join('/media','user','disk0'),
                clip_length=8,
                clip_size=256,
                val_clip_length=None,
@@ -134,7 +134,7 @@ def get_diving48(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
 
     [Args]
         - data_root: String containing the complete path of the dataset. Note that the path should correspond to
-        the parent path of where the dataset is. Defaults to `/media/agstergiou/m2ssd_2TB`.
+        the parent path of where the dataset is. Defaults to `/media/user/disk0`.
         - clip_length: Integer for the number of frames to sample per video. Defaults to 8.
         - clip_size: Integer for the width and height of the frames in the video. Defaults to 256.
         - val_clip_length: Integer for the number of frames in the validation clips. If None, they
@@ -152,13 +152,13 @@ def get_diving48(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
     [Returns]
         - Tuple for training VideoIter object and validation VideoIter object.
 '''
-def get_hmdb51(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
+def get_hmdb51(data_root=os.path.join('/media','user','disk0'),
                clip_length=8,
                clip_size=256,
                val_clip_length=None,
                val_clip_size=None,
-               train_interval=2,
-               val_interval=2,
+               train_interval=4,
+               val_interval=4,
                mean=[0.485, 0.456, 0.406],
                std=[0.229, 0.224, 0.225],
                seed=torch.distributed.get_rank() if torch.distributed.is_initialized() else 0,
@@ -173,7 +173,7 @@ def get_hmdb51(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
 
     train_sampler = sampler.RandomSampling(num=clip_length, interval=train_interval, speed=[1.0, 1.0], seed=(seed+0))
 
-    train = VideoIter(video_prefix = os.path.join(data_root, 'data', 'HMDB51_videos','jpg'),
+    train = VideoIter(dataset_location = os.path.join(data_root, 'data', 'HMDB51_videos','jpg'),
                       csv_filepath = os.path.join(data_root, 'labels', 'hmdb_split1_train.csv'),
                       include_timeslices = False,
                       sampler=train_sampler,
@@ -215,7 +215,7 @@ def get_hmdb51(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
 
     val   = VideoIter(dataset_location = os.path.join(data_root,'data',
                       'HMDB51_videos','jpg'),
-                      csv_filepath = os.path.join(data_root, 'labels', 'hmdb_split1_test.csv'),
+                      csv_filepath = os.path.join(data_root, 'labels', 'hmdb_split1_val.csv'),
                       include_timeslices = False,
                       sampler=val_sampler,
                       video_size=(val_clip_length,val_clip_size,val_clip_size),
@@ -241,7 +241,7 @@ def get_hmdb51(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
 
     [Args]
         - data_root: String containing the complete path of the dataset. Note that the path should correspond to
-        the parent path of where the dataset is. Defaults to `/media/agstergiou/m2ssd_2TB`.
+        the parent path of where the dataset is. Defaults to `/media/user/disk0`.
         - clip_length: Integer for the number of frames to sample per video. Defaults to 8.
         - clip_size: Integer for the width and height of the frames in the video. Defaults to 256.
         - val_clip_length: Integer for the number of frames in the validation clips. If None, they
@@ -259,7 +259,7 @@ def get_hmdb51(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
     [Returns]
         - Tuple for training VideoIter object and validation VideoIter object.
 '''
-def get_ucf101(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
+def get_ucf101(data_root=os.path.join('/media','user','disk0'),
                clip_length=8,
                clip_size=256,
                val_clip_length=None,
@@ -322,7 +322,7 @@ def get_ucf101(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
                                                fix_cursor=True,
                                                shuffle=True)
     val   = VideoIter(dataset_location=os.path.join(data_root, 'data', 'UCF101_videos','jpg'),
-                      csv_filepath=os.path.join(data_root, 'labels', 'ucf101_split1_test.csv'),
+                      csv_filepath=os.path.join(data_root, 'labels', 'ucf101_split1_val.csv'),
                       include_timeslices = False,
                       sampler=val_sampler,
                       video_size=(val_clip_length,val_clip_size,val_clip_size),
@@ -348,7 +348,7 @@ def get_ucf101(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
 
     [Args]
         - data_root: String containing the complete path of the dataset. Note that the path should correspond to
-        the parent path of where the dataset is. Defaults to `/media/agstergiou/m2ssd_2TB`.
+        the parent path of where the dataset is. Defaults to `/media/user/disk0`.
         - name: String for the dataset name. This differs from the rest of the functions are multiple variants of
         kinetics can be used (Mini-Kinetics, K-400, K-600, K-700). Defaults to `KINETICS-700`.
         - clip_length: Integer for the number of frames to sample per video. Defaults to 8.
@@ -368,7 +368,7 @@ def get_ucf101(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
     [Returns]
         - Tuple for training VideoIter object and validation VideoIter object.
 '''
-def get_kinetics(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
+def get_kinetics(data_root=os.path.join('/media','user','disk0'),
                  name = 'KINETICS-700',
                  clip_length=8,
                  clip_size=256,
@@ -469,7 +469,7 @@ def get_kinetics(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
 
     [Args]
         - data_root: String containing the complete path of the dataset. Note that the path should correspond to
-        the parent path of where the dataset is. Defaults to `/media/agstergiou/m2ssd_2TB`.
+        the parent path of where the dataset is. Defaults to `/media/user/disk0`.
         - clip_length: Integer for the number of frames to sample per video. Defaults to 8.
         - clip_size: Integer for the width and height of the frames in the video. Defaults to 256.
         - val_clip_length: Integer for the number of frames in the validation clips. If None, they
@@ -487,7 +487,7 @@ def get_kinetics(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
     [Returns]
         - Tuple for training VideoIter object and validation VideoIter object.
 '''
-def get_hacs(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
+def get_hacs(data_root=os.path.join('/media','user','disk0'),
                  clip_length=8,
                  clip_size=256,
                  val_clip_length=None,
@@ -579,7 +579,7 @@ def get_hacs(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
 
     [Args]
         - data_root: String containing the complete path of the dataset. Note that the path should correspond to
-        the parent path of where the dataset is. Defaults to `/media/agstergiou/m2ssd_2TB`.
+        the parent path of where the dataset is. Defaults to `/media/user/disk0`.
         - clip_length: Integer for the number of frames to sample per video. Defaults to 8.
         - clip_size: Integer for the width and height of the frames in the video. Defaults to 256.
         - val_clip_length: Integer for the number of frames in the validation clips. If None, they
@@ -597,7 +597,7 @@ def get_hacs(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
     [Returns]
         - Tuple for training VideoIter object and validation VideoIter object.
 '''
-def get_moments(data_root=os.path.join('/media','agstergiou','m2ssd_1TB'),
+def get_moments(data_root=os.path.join('/media','user','disk0'),
                  clip_length=8,
                  clip_size=256,
                  val_clip_length=None,
@@ -626,7 +626,7 @@ def get_moments(data_root=os.path.join('/media','agstergiou','m2ssd_1TB'),
     train = VideoIter(dataset_location=os.path.join(data_root, 'data' ,
                       'Moments_in_Time_videos','jpg'),
                       csv_filepath=os.path.join(data_root, 'labels', 'Moments_in_Time_train.csv'),
-                      include_timeslices = True,
+                      include_timeslices = False,
                       sampler=train_sampler,
                       video_size=(clip_length,clip_size,clip_size),
                       video_transform = transforms.Compose(
@@ -666,7 +666,7 @@ def get_moments(data_root=os.path.join('/media','agstergiou','m2ssd_1TB'),
     val   = VideoIter(dataset_location=os.path.join(data_root, 'data',
                       'Moments_in_Time_videos','jpg'),
                       csv_filepath=os.path.join(data_root, 'labels', 'Moments_in_Time_val.csv'),
-                      include_timeslices = True,
+                      include_timeslices = False,
                       sampler=val_sampler,
                       video_size=(val_clip_length,val_clip_size,val_clip_size),
                       video_transform=transforms.Compose(

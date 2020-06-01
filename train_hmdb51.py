@@ -19,7 +19,8 @@ parser = argparse.ArgumentParser(description="PyTorch Video Classification Parse
 # debug
 parser.add_argument('--debug-mode', type=bool, default=True,
                     help="print all setting for debugging.")
-parser.add_argument('--dataset', default='HMDB51',
+# io
+parser.add_argument('--dataset', default='HMDB101',
                     help="path to dataset")
 parser.add_argument('--clip-length', default=16,
                     help="define the length of each input sample.")
@@ -46,12 +47,12 @@ parser.add_argument('--network', type=str,
 # - step 2: load the 2D pretrained model if `pretrained_2d' is True
 # - step 3: load the 3D pretrained model if `pretrained_3d' is defined
 # - step 4: resume if `resume_epoch' >= 0
-parser.add_argument('--pretrained_3d', type=str,
+parser.add_argument('--pretrained_3d', type=str,  default=None,
                     help="load default 3D pretrained model.")
 parser.add_argument('--resume-epoch', type=int, default=-1,
                     help="resume train")
 # optimization
-parser.add_argument('--fine-tune', type=bool, default=True,
+parser.add_argument('--fine-tune', type=bool, default=False,
                     help="apply different learning rate for different layers")
 parser.add_argument('--batch-size', type=int, default=32,
                     help="batch size")
