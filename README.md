@@ -10,21 +10,15 @@
 --------------------------------------------------------------------------------
 
 ## Abstract
-Temporal motion has been one of the essential components for the effective recognition of actions in videos. Time information and features are primarily extracted hierarchically through small sequences of few frames, in modern models, with the use of 3D convolutions. In this paper, we propose a method that can learn general changes of features across time, making activations not bound to their temporal locality, by also include a general notion of their feature motions. Through this recalibration of temporal feature cues across multiple frames, 3D-CNN models are capable of using features that are prevalent over different time segments, while being less dependent on their temporal receptive fields. We present improvements on both high and low capacity models, with the largest benefits being observed in low-memory models, as most of their current drawbacks rely on their poor generalisation capabilities because of the low number and complexity of their features. We present average improvements, over the corresponding state of the art models, in the range of x\% on Kinetics-700 (K-700), x\% on Moments in Time (MiT), 2.73\% on Human Actions Clips and Segments (HACS), x \% on HMDB-51 and x\% on UCF-101.  
+Temporal motion has been one of the essential components for effectively recognizing actions in videos. Both, time information and features are primarily extracted hierarchically through small sequences of few frames, in modern models, with the use of 3D convolutions. In this paper, we propose a method that can learn general feature changes across time, making activations unbounded to a temporal locality, by additionally including a general notion of their learned features. Through this recalibration of temporal feature cues across multiple frames, 3D-CNN models are capable of using features that are prevalent over different time segments, while being less constraint by their temporal receptive fields. We present improvements on both high and low capacity models, with the largest benefits being observed in low-memory models, as most of their current drawbacks rely on their poor generalization capabilities because of the low number and feature complexity. We present average improvements, over both corresponding and state-of-the-art models, in the range of 3.67\% on Kinetics-700 (K-700), 2.75\% on Moments in Time (MiT), 2.73\% on Human Actions Clips and Segments (HACS), 3.195\% on HMDB-51 and 3.30\% on UCF-101. <p align="center">
+<i></i>
+<br>
+<a href="https://arxiv.org/pdf/1902.01078.pdf" target="blank">[arXiv preprint]</a>
 
 
 <p align="center">
 <img src="./figures/Squeeze_and_Recursion_Proof_of_Concept.png" width="700" height="370" />
 <img src="./figures/SR.png" width="700" height="150" />
-</p>
-
-
-<p align="center">
-<i></i>
-<br>
-<a href="https://arxiv.org/pdf/1902.01078.pdf" target="blank">[arXiv preprint]</a>
- &nbsp;&nbsp;&nbsp;
-<a href="https://www.youtube.com/watch?v=JANUqoMc3es&feature=youtu.be" target="blank">[video presentation]</a>
 </p>
 
 ## Dependencies
@@ -293,6 +287,15 @@ Along scores, speed the batch size and learning rate are also monitored at each 
 All experiments were run in a AMD Threadripper 2950X (64GB) system with 4x NVIDA 2080 Ti GPUs.
 
 ## Citation
+```
+@article{stergiou2020improved,
+  title={Improved Time Feature Generalization with Squeeze and Recursion Temporal srtg_r3d_34_gates_False},
+  author={Stergiou, Alexandros and Poppe, Ronald},
+  journal={arXiv preprint},
+  year={2020}
+}
+
+```
 
 ## Licence
 
