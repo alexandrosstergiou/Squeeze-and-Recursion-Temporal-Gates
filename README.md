@@ -289,7 +289,7 @@ All experiments were run in a AMD Threadripper 2950X (64GB) system with 4x NVIDA
 ## Citation
 ```
 @article{stergiou2020improved,
-  title={Improved Time Feature Generalization with Squeeze and Recursion Temporal srtg_r3d_34_gates_False},
+  title={Improved Time Feature Generalization with Squeeze and Recursion Temporal Gates},
   author={Stergiou, Alexandros and Poppe, Ronald},
   journal={arXiv preprint},
   year={2020}

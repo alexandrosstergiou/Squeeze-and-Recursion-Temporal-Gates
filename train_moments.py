@@ -72,13 +72,6 @@ parser.add_argument('--end-epoch', type=int, default=10000,
                     help="maxmium number of training epoch")
 parser.add_argument('--random-seed', type=int, default=1,
                     help='random seed (default: 1)')
-# distributed training
-parser.add_argument('--backend', default='nccl', type=str, choices=['gloo', 'nccl'],
-                    help='Name of the backend to use')
-parser.add_argument('--world-size', default=1, type=int,
-                    help='number of distributed processes')
-parser.add_argument('--dist-url', default=None, type=str,
-                    help='url used to set up distributed training')
 
 '''
 ---  S T A R T  O F  F U N C T I O N  A U T O F I L L  ---
