@@ -432,7 +432,7 @@ class BasicBlock(nn.Module):
 
 '''
 class Bottleneck(nn.Module):
-    expansion = 4
+    expansion = 1
 
     def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None, groups=1, base_width=64, place='final', recursion=False, gates=False):
 

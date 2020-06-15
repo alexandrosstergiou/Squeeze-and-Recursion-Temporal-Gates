@@ -1,4 +1,4 @@
-# Squeeze and Recursion Temporal Gates
+# Learn to cycle: Time-consistent feature discovery for action recognition
 
 ![supported versions](https://img.shields.io/badge/python-3.5%2C3.6-brightgreen/?style=flat&logo=python&color=green)
 ![Library](https://img.shields.io/badge/library-PyTorch-blue/?style=flat&logo=pytorch&color=informational)
