@@ -13,7 +13,7 @@
 Temporal motion has been one of the essential components for effectively recognising actions in videos. Both, time information and features are primarily extracted hierarchically through small sequences of few frames, with the use of 3D convolutions. In this paper, we propose a method that can learn general feature changes across time, making activations unbounded to a temporal locality, by additionally including a general notion of their learned features. Through this recalibration of temporal feature cues across multiple frames, 3D-CNN models are capable of using features that are prevalent over different time segments, while being less constraint by their temporal receptive fields. We present improvements on both high and low capacity models, with the largest benefits being observed in low-memory models, as most of their current drawbacks rely on their poor generalisation capabilities because of the low number and feature complexity. We present average improvements, over both corresponding and state-of-the-art models, in the range of 3.67\% on Kinetics-700 (K-700), 2.75\% on Moments in Time (MiT), 2.57\% on Human Actions Clips and Segments (HACS), 3.195\% on HMDB-51 and 3.30\% on UCF-101 <p align="center">
 <i></i>
 <br>
-<a href="https://arxiv.org/pdf/1902.01078.pdf" target="blank">[arXiv preprint]</a>
+<a href="https://arxiv.org/pdf/2006.08247.pdf" target="blank">[arXiv preprint]</a>
 
 
 <p align="center">
@@ -289,9 +289,9 @@ All experiments were run in a AMD Threadripper 2950X (64GB) system with 4x NVIDA
 ## Citation
 ```
 @article{stergiou2020improved,
-  title={Improved Time Feature Generalization with Squeeze and Recursion Temporal Gates},
+  title={Learn to cycle: Time-consistent feature discovery for action recognition},
   author={Stergiou, Alexandros and Poppe, Ronald},
-  journal={arXiv preprint},
+  journal={arXiv preprint arXiv:2006.08247},
   year={2020}
 }
 
