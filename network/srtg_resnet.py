@@ -132,7 +132,12 @@ class Squeeze_and_Recursion(nn.Module):
         self.gate = gates
 
 
-    def soft_nnc(self,embeddings1,embeddings2):
+    def soft_nnc(embeddings1,embeddings2,check=1):
+
+        # Please keep this line for possible arithmetic underflows
+        embeddings1 = embeddings1.half().double() # for improved accuracy change `half()` to `float()`
+        embeddings2 = embeddings2.half().double() # but keep `double()` conversion regardless
+
 
         # Assume inputs shapes of (batch x) x channels x frames x height x width
         dims_1 = embeddings1.shape
@@ -148,43 +153,42 @@ class Squeeze_and_Recursion(nn.Module):
                 embeddings2 = F.avg_pool3d(input=embeddings2, kernel_size=(1,dims_2[-2],dims_1[-1]))
             embeddings2=embeddings2.squeeze(-1).squeeze(-1)
 
-
-        # embeddings1: [batch x channels x frames] --> [frames x batch x channels x 1]
+        # Embeddings 1 expansion: [batch x channels x frames] --> [frames x batch x channels x 1]
         emb1 = embeddings1.permute(2,0,1).unsqueeze(-1)
 
-        # embeddings2: [batch x channels x frames] --> [frames x batch x channels x frames]
+        # Embeddings 2 broadcasting: [batch x channels x frames] --> [frames x batch x channels x frames]
         emb2 = embeddings2.unsqueeze(0).repeat(embeddings2.size()[-1],1,1,1)
 
-        # euclidian distance calculation
-        distances = torch.abs(emb1-emb2).pow(2)
+        # Eucledian distance calculation - summed over channels #[frames x batch x frames]
+        dist = torch.abs(emb2-emb1).pow(2).permute(0,1,3,2).sum(-1)
+        # Minimum (frame-based) indices selection for eucledian distance
+        idx_dist = dist.unsqueeze(0).argmin(-1)
 
-        # Softmax calculation
-        softmax = torch.exp(distances)/torch.exp(torch.sum(distances,dim=-1)).unsqueeze(-1)
+        # Softmax
+        exp_dist = torch.exp(dist)/torch.exp(torch.sum(dist,dim=-1)).unsqueeze(-1)
+        # Minimum (frame-based) indices selection for softmax distance
+        _, idx_exp = torch.min(exp_dist,dim=-1)
 
-        # Soft nearest neighbour calculator (all frames)
-        soft_nn = torch.sum(softmax*emb2,dim=-1)
+        # Reshaping [frames x batch] --> [batch x frames]
+        idx_exp = idx_exp.permute(1,0)
 
-        # Permute [frames x batch x channels] --> [frames x batch x channels x 1]
-        soft_nn = soft_nn.unsqueeze(-1)
+        # Tensor of range(#frames): produces a sequence to be later compared with the discovered indices
+        idx_e2 = torch.tensor([i for i in range(dims_1[2])]).unsqueeze(0).repeat(dims_1[0],1)
 
-        # Find points of soft nn in embeddings2
-        values,indices = torch.min(torch.abs(soft_nn-emb2).pow(2),dim=-1)
+        # Find matching sequences per batch
+        e1toe2 = torch.sum(idx_exp==idx_e2,dim=-1)==dims_1[2]
 
-        indices = indices.permute(1,2,0)
-        values = values.permute(1,2,0)
+        # recursion for cyclic-back
+        if check==2:
+            return e1toe2
+        else:
+            e2toe1 = soft_nnc(embeddings2,embeddings1,check=2)
 
-        # Get batch-wise T/F values
-        nearest_n = embeddings2.scatter_(2,indices,1.)
-        b_consistent = embeddings2 - nearest_n
+        # join together
+        conditions = e1toe2+e2toe1
 
-        # [batch x channels x frames] --> [batch]
-        b_consistent = b_consistent.sum(-1).sum(-1)
-
-        # Non-zero elements are not consistent
-        b_consistent[b_consistent==0.] = 1.
-        b_consistent[b_consistent!=0.] = 0.
-
-        return b_consistent
+        # return only the batch indices
+        return torch.where(conditions==True)[0]
 
 
     '''--- Function for finding the pair-wise euclidian distance between two embeddings in batches ---'''
@@ -253,14 +257,8 @@ class Squeeze_and_Recursion(nn.Module):
 
         # Use gates if specified
         if self.gate:
-            b1_indices = self.soft_nnc(squeezed, sr)
-            b2_indices = self.soft_nnc(sr, squeezed)
-            if torch.nonzero(b1_indices).size()[0] != 0 and torch.nonzero(b2_indices).size()[0] != 0 :
-                idx_1 = torch.nonzero(b1_indices).unsqueeze(-1)
-                idx_2 = torch.nonzero(b2_indices).unsqueeze(-1)
-                idx = self.intersect1d(idx_1,idx_2)
-                if torch.nonzero(idx).size()[0] != 0:
-                    x[idx] = x * sr.clone()
+            idx = self.soft_nnc(squeezed, sr)
+            x[idx] = x * sr.clone()
         else:
             x = x * sr.clone()
 
@@ -380,12 +378,12 @@ class BasicBlock(nn.Module):
     def forward(self, x):
         identity = x
 
-        out = self.conv1(x)
         if self.pos=='top' and self.recursion:
             out = self.sar(out)
-        out = self.conv2(out)
+        out = self.conv1(x)
         if self.pos=='mid' and self.recursion:
             out = self.sar(out)
+        out = self.conv2(out)
         if self.downsample is not None:
             identity = self.downsample(x)
             if self.pos=='skip' and self.recursion:
