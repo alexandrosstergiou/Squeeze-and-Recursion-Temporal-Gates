@@ -10,7 +10,7 @@
 --------------------------------------------------------------------------------
 
 ## Abstract
-Generalizing over temporal variations is a prerequisite for effective action recognition in videos. Despite significant advances in deep neural networks, it remains a challenge to focus on short-term discriminative motions in relation to the overall performance of an action. We address this challenge by allowing some flexibility in discovering relevant spatio-temporal features. We introduce Squeeze and Recursion Temporal Gates (SRTG), an approach that favors inputs with similar activations with potential temporal variations. We implement this idea with a novel CNN block that uses an LSTM to encapsulate feature dynamics, in conjunction with a temporal gate that is responsible for evaluating the consistency of the discovered dynamics and the modeled features. We show consistent improvement when using SRTG blocks, with only a minimal increase in the number of GFLOPs. On Kinetics-700, we perform on par with current state-of-the-art models, and outperform these on HACS, Moments in Time, UCF-101 and HMDB-51 <p align="center">
+Generalising over temporal variations is a prerequisite for effective action recognition in videos. Despite significant advances in deep neural networks, it remains a challenge to focus on short-term discriminative motions in relation to the overall performance of an action. We address this challenge by allowing some flexibility in discovering relevant spatio-temporal features. We introduce Squeeze and Recursion Temporal Gates (SRTG), an approach that favours inputs with similar activations with potential temporal variations. We implement this idea with a novel CNN block that uses an LSTM to encapsulate feature dynamics, in conjunction with a temporal gate that is responsible for evaluating the consistency of the discovered dynamics and the modeled features. We show consistent improvement when using SRTG blocks, with only a minimal increase in the number of GFLOPs. On Kinetics-700, we perform on par with current state-of-the-art models, and outperform these on HACS, Moments in Time, UCF-101 and HMDB-51 <p align="center">
 <i></i>
 <br>
 <a href="https://arxiv.org/pdf/2006.08247.pdf" target="blank">[arXiv preprint]</a>
@@ -33,7 +33,7 @@ Ensure that the following packages are installed in your machine:
 + `torch` (version >= 1.4.0)
 + `youtube-dl` (version >= 2020.3.24)
 
-You can intall all of the packages with the following command:
+You can install all of the packages with the following command:
 ```
 $ pip install coloredlogs ffmpeg-python imgaug opencv-python torch torchvision youtube-dl
 ```
@@ -61,7 +61,7 @@ A custom format is used for all label files for each of the datasets. If using (
 |`label`|`youtube_id`/`id`|`time_start`(optional)|`time_end`(optional)|`split`|
 |-----|------|-----|-----|----|
 
-##### You can also download the already converted `.csv` label files for the Kinetics (Mini, 400, 600, 700), MiT, HACS, UCF101, HMDB51 \& Diving48 from [[this link]](https://drive.google.com/open?id=1ySOhq2Im6Ac19EaNwiMX0azzdC-xfkgh)
+##### You can also download the already converted `.csv` label files for the Kinetics (Mini/200, 400, 600, 700), MiT, HACS, UCF101, HMDB51 \& Diving48 from [[this link]](https://drive.google.com/open?id=1ySOhq2Im6Ac19EaNwiMX0azzdC-xfkgh)
 
 
 We include training/data loading scripts for six action/video recognition datasets:
@@ -77,7 +77,7 @@ All three HACS, Kinetics and MiT datasets can be dowloaded through the [Activity
 
 #### Conversion to SQLite3 for speed optimisation
 
-As extracting videos to image format in a per-frame fashion we opt to used SQL databases for each of the videos. This effectively (1) limits the number of random read operations and (2) The number of inodes used as individual image files (`.png`/`.jpeg`/etc.) increase the number of inodes used significantly.
+As extracting videos to image format in a per-frame fashion we opt to used SQL databases for each of the videos. This effectively (1) limits the number of random read operations and (2) The number of _inodes_ used as individual image files (`.png`/`.jpeg`/etc.) increase the number of _inodes_ used significantly.
 
  **In total, the speed-up in reading times is close to ~1000x of that with conventional random-access image files**
 
@@ -119,13 +119,13 @@ We assume a fixed directory formatting for both the data and the labels used. Th
 ```
 
 In the structure, any items enclosed in angle brackets should be changed to the correct dataset name, class names and video ids. The three standard elements that should remain the same across any dataset are:
-- **jpg**: which is the the container folder for all the classes in the dataset.
+- **jpg**: The the container folder for all the classes in the dataset.
 
-- **frames.db**: The SQL database specific for each video that contains all the frames in the format of `ObjId`: which should be a string containing the video filepath alongside the frame number and `frames` that encapsulates all the data. The SQL table should also be called `Images`.
+- **frames.db**: The SQL database specific for each video that contains all the frames in the format of `ObjId`: which should be a string containing the video filepath alongside the frame number and `frames` that encapsulate all the data. The SQL table should also be called `Images`.
 
 - **n_frames**: A file that should only include the number of frames for the video for quick access.
 
-> You can of course also use your own dataset if you follow the above structure and convert all your videos to SQL databases. The process for doing so should be identical for any of the currently supported datasets.
+> You can also use your own dataset if you follow the above structure and convert all your videos to SQL databases. The process for doing so should be identical for any of the currently supported datasets.
 
 #### Data loading
 
@@ -159,10 +159,10 @@ frames = np.asarray(frames)
 
 To increase generalisation capabilities of the models we further include video augmentations inside our training process. These augmentations are primarily divided to **temporal-based** augmentations and **spatial-based** augmentations.
 
-+ Temporal-based augmentations are used to perform changes at the temporal extend of the videos. Therefore, any variations based on time. These include:
++ Temporal-based augmentations are used to perform changes at the temporal extend of the videos. Therefore, any variations based on time include:
 
-  - Temporal sampling interval which is the maximum number of skipped frames between two frames from which the final video will be composed by.
-  - Frame sampling which can either be done sequentially (e.g. centre-most frames) or randomly through a uniform/normal distribution.
+  - Temporal sampling interval, which is the maximum number of skipped frames between two frames from which the final video will be composed by.
+  - Frame sampling, which can either be done sequentially (e.g. centre-most frames) or randomly through a uniform/normal distribution.
 
 
 + Spatial-based augmentations are performed in frame-level and primarily change either the width-height or the channels/RGB values. We set a probability of 0.8 for performing **any** augmentations for each video, while each augmentation type is assigned a 0.4 probability. We make use of the `imgaug` package for all of our spatial augmentations:
@@ -180,9 +180,9 @@ To increase generalisation capabilities of the models we further include video a
   Ranges and values were empirically evaluated in order to balance between a reasonable amount of deformation without alleviating the informative features of the video. It's important to note the **all video frames should present exactly the same type of spatial augmentations** to ensure coherence.  
 
 
-#### Long-Short Circles
+#### Long-Short Cycles
 
-We additionally use a Multigrid training schedule for both improving generalisation and training times. Our implementation is based on the [Wu *et al.* paper](https://arxiv.org/abs/1912.00998). For convenience three `Dataloader` objects are used for every long circle that correspond to changes in data for each short circle.
+We additionally use a Multigrid training schedule for both improving generalisation and training times. Our implementation is based on the [Wu *et al.* paper](https://arxiv.org/abs/1912.00998). For convenience three `Dataloader` objects are used for every long cycle that correspond to changes in data for each short cycle.
 - In case of RAM constraints we suggest to either not use the Multigrid training implementation or decrease the number of workers at `train/model.py`
 
 ## Usage
@@ -201,14 +201,14 @@ python train_hacs.py --network srtg_r3d_34 --dataset /media/alex/m2ssd_vol1/data
 python train_hacs.py --network srtg_r3d_50 --dataset /media/alex/m2ssd_vol1/data/HACS_videos/ --clip-size 224 --gpus 4 --pretrained_3d results/HACS/srtg_r3d_50_gates_False/srtg_r3d_50_ep-0020.pth --resume-epoch 21 --lr-base 0.1 --batch-size 32
 ```
 
-**Weight initialisation/Transfer learning:** It is possible to initialise weights or use pre-trained networks. Similarly to resuming training if the network architecture includes some variations (e.g. the number of class neurones) only the corresponding weights will be loaded. If Transfer learning, you can additionally use the `fine-tune` call argument to decrease the learning rate used for convolution weights while maintaining the same base learning rate for the added layers.
+**Weight initialisation/Transfer learning:** It is possible to initialise weights or use pre-trained networks. Similarly to resuming training if the network architecture includes some variations (e.g. the number of class neurones), only the corresponding weights will be loaded. For transfer learning, you can additionally use the `fine-tune` call argument to decrease the learning rate used for convolution weights while maintaining the same base learning rate for the added layers.
 ```
 python train_kinetics.py --network srtg_r3d_34 --dataset /media/alex/m2ssd_vol1/data/Kinetics_videos/ --variant 700 --clip-size 224 --gpus 4 --pretrained_3d results/HACS/srtg_r3d_34_gates_False/srtg_r3d_34_ep-0080.pth --fine-tune True --lr-base 0.1 --batch-size 48
 ```
 
 #### Calling arguments
 
-The following arguments are used and hould be included at the parser of any training script.
+The following arguments are used and can be included at the parser of any training script.
 
 |Argument name | functionality|
 | :--------------: | ------- |
@@ -233,10 +233,10 @@ The following arguments are used and hould be included at the parser of any trai
 | `lr-steps` | List for the epochs for which the learning rate will decrease/change. |
 | `lr-factor` | Float or Int with which the learning rate changes. |
 | `save-frequency`| Integer for when the model to be save in a `.pth` file.|
-| `end-epoch`| Integer for the number of eposch.|
+| `end-epoch`| Integer for the number of epoch.|
 |`random-seed`| Integer number for seeding in any random operation (e.g. data shuffling)|
 
-**Spacial call arguments**
+**Special call arguments**
 
 The are some cases were additional arguments are used based on the structures or specific datasets:
 
@@ -260,7 +260,7 @@ We report the loss, top-1 and top-5 accuracy during each logging interval during
 
 #### Speed monitoring
 
-We also provide a monitor for speeds in terms of video-reading from disk (CPU), forward pass (GPU) and backprop (GPU). Speeds are reported as clips per second. You can have a look at class `SpeedMonitor` in `train/callbacks.py` for more information Overall the output at each logging interval should look like:
+We also provide a monitor for speeds in terms of video-reading from disk (CPU), forward pass (GPU) and backprop (GPU). Speeds are reported as clips per second. You can have a look at class `SpeedMonitor` in `train/callbacks.py` for more information. Overall the output at each logging interval should look like:
 
 <center>
 ... Speed (r=<span style="color:#a1e2b7">1.53e+5</span> f=<span style="color:#f3e27a">9.84e+1</span> b=<span style="color:#ff7d75">1.78e+1</span>) ...
@@ -280,11 +280,11 @@ Colours are used in order to give a quick understanding if the speed is in gener
 
 #### Batch size \& lr monitoring
 
-Along scores, speed the batch size and learning rate are also monitored at each logging interval. This is especially useful for using circles.
+Along scores, speed the batch size and learning rate are also monitored at each logging interval. This is especially useful for using cycles.
 
 ## Hardware specifications
 
-All experiments were run in a AMD Threadripper 2950X (64GB) system with 4x NVIDA 2080 Ti GPUs.
+All experiments were run with 4x NVIDA 2080 Ti GPUs.
 
 ## Citation
 ```
