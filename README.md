@@ -1,7 +1,7 @@
 # Squeeze and Recursion Temporal gates
 ### Code implementation for:
-- Learn to cycle: Time-consistent feature discovery for action recognition
-- Right on Time: Multi-Temporal Convolutions for Human Action Recognition in Videos
+- Learn to cycle: Time-consistent feature discovery for action recognition [[pdf]](https://arxiv.org/abs/2006.08247)
+- Right on Time: Multi-Temporal Convolutions for Human Action Recognition in Videos [[pdf]](https://arxiv.org/abs/2011.03949)
 
 ![supported versions](https://img.shields.io/badge/python-3.5%2C3.6-brightgreen/?style=flat&logo=python&color=green)
 ![Library](https://img.shields.io/badge/library-PyTorch-blue/?style=flat&logo=pytorch&color=informational)
@@ -27,7 +27,7 @@ Generalising over temporal variations is a prerequisite for effective action rec
 
 --------------------------------------------------------------------------------
 
-# Right on Time: Multi-Temporal Convolutions for Human Action Recognition inVideos
+# Right on Time: Multi-Temporal Convolutions for Human Action Recognition in Videos
 ## Abstract
 The variations in the temporal performance of human actions observed in videos present challenges for their extraction using fixed-sized convolution kernels in CNNs. We present an approach that is more flexible in terms of processing the input at multiple timescales. We introduce Multi-Temporal networks that model spatio-temporal patterns of different temporal durations at each layer. To this end, they employ novel 3D convolution (MTConv) blocks that consist of a short stream for local space-time features and a long stream for features spanning across longer times. By aligning features of each stream with respect to the global motion patterns using recurrent cells, we can discover temporally coherent spatio-temporal features with varying durations. We further introduce sub-streams within each of the block pathways to reduce the computation requirements.
 The proposed MTNet architectures outperform state-of-the-art 3D-CNNs on five action recognition benchmark datasets. Notably, we achieve at 87.22% top-1 accuracy on HACS, and 58.39% top-1 at Kinectics-700. We further demonstrate the favorable computational requirements. Using sub-streams, we can further achieve a drastic reduction in parameters (\~60%) and GLOPs (\~74%). Experiments using transfer learning finally verify the generalization capabilities of the multi-temporal features
@@ -69,7 +69,7 @@ $ pip install coloredlogs ffmpeg-python imgaug opencv-python torch torchvision y
 ```python
 import time
   tmp = torch.rand(1,3,16,224,224).cuda()
-  #--- TEST 1 ---
+  #--- INFERENCE TIME TEST ---
   net = srtg_r3d_101(num_classes=400).cuda()
 
   tot_forwrd_inf = 0
@@ -87,7 +87,7 @@ import time
 
       loss = torch.mean(output)
 
-      # Forward inference
+      # Backward inference
       torch.cuda.synchronize()
       tsince = int(round(time.time()*1000))
       loss.backward()
@@ -346,7 +346,23 @@ Along scores, speed the batch size and learning rate are also monitored at each 
 
 ## Hardware specifications
 
-All experiments were run with 4x NVIDA 2080 Ti GPUs with a shared memory of 128GB.
+All experiments were run with 4x NVIDA 2080 Ti GPUs with a shared memory of 128GB. If you are in Ubuntu the easiest way to assign a larger amount of shared memory is to use:
+
+```
+$ df -h
+```
+To find the size of `/dev/shm` . And then edit/insert the line below in `/etc/fstab`:
+
+`none /dev/shm tmpfs defaults,size=86G 0 0`
+Then exit and run (w/ `sudo`):
+```
+--- If line was now added: ---
+$ mount /dev/shm
+
+--- If line was edited: ---
+$ mount -o remount /dev/shm
+```
+
 
 ## Citation
 ```
@@ -357,6 +373,12 @@ All experiments were run with 4x NVIDA 2080 Ti GPUs with a shared memory of 128G
   year={2020}
 }
 
+@article{stergiou2020right,
+  title={Right on Time: Multi-Temporal Convolutions for Human Action Recognition in Videos},
+  author={Alexandros Stergiou and Ronald Poppe},
+  journal={arXiv preprint arXiv:2011.03949},
+  year={2020}
+}
 ```
 
 ## Licence
