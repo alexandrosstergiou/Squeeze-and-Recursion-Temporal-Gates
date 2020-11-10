@@ -3,7 +3,8 @@
 '''
 import coloredlogs, logging
 coloredlogs.install()
-#from .MTNet import MTNet
+from .MTnet import MTNet_32, MTNet_48, MTNet_64, MTNet_132, MTNet_200, MTNet_264
+from .MTnet import MTNet_32_g8, MTNet_48_g8, MTNet_64_g8, MTNet_132_g8
 from .srtg_resnet import r3d_18, r3d_34, r3d_50, r3d_101, r3d_152, r3d_200, r3dxt50_32x4d, r3dxt101_32x8d, wide_r3d50_2,wide_r3d101_2, r2plus1d_18, r2plus1d_34, r2plus1d_50, r2plus1d_101, r2plus1d_152, r2plus1d_200, r2plus1dxt50_32x4d, r2plus1dxt101_32x8d, wide_r2plus1d50_2,wide_r2plus1d101_2
 from .srtg_resnet import srtg_r3d_18, srtg_r3d_34, srtg_r3d_50, srtg_r3d_101, srtg_r3d_152, srtg_r3d_200, srtg_r3dxt50_32x4d, srtg_r3dxt101_32x8d, srtg_wide_r3d50_2, srtg_wide_r3d101_2, srtg_r2plus1d_18, srtg_r2plus1d_34, srtg_r2plus1d_50, srtg_r2plus1d_101, srtg_r2plus1d_152, srtg_r2plus1d_200, srtg_r2plus1dxt50_32x4d, srtg_r2plus1dxt101_32x8d, srtg_wide_r2plus1d50_2, srtg_wide_r2plus1d101_2
 
@@ -24,8 +25,33 @@ from .config import get_config
 def get_symbol(name, print_net=False, **kwargs):
 
     # Multi-Temporal net
-    if name.upper() == "MTNET":
-        net = MTNet(**kwargs)
+    if "MTNET" in name.upper():
+        if "MTNET_32" in name.upper():
+            if "G8" in name.upper():
+                net = MTNet_32_g8(**kwargs)
+            else:
+                net = MTNet_32(**kwargs)
+        elif "MTNET_48" in name.upper():
+            if "G8" in name.upper():
+                net = MTNet_48_g8(**kwargs)
+            else:
+                net = MTNet_48(**kwargs)
+        elif "MTNET_64" in name.upper():
+            if "G8" in name.upper():
+                net = MTNet_64_g8(**kwargs)
+            else:
+                net = MTNet_64(**kwargs)
+        elif "MTNET_132" in name.upper():
+            if "G8" in name.upper():
+                net = MTNet_132_g8(**kwargs)
+            else:
+                net = MTNet_132(**kwargs)
+        elif "MTNET_200" in name.upper():
+            net = MTNet_200(**kwargs)
+        elif "MTNET_264" in name.upper():
+            net = MTNet_264(**kwargs)
+        else:
+            net = MTNet_64(**kwargs)
     # ResNet 3D
     elif "R3D" in name.upper():
         if "R3D_18" in name.upper():

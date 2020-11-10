@@ -1,14 +1,15 @@
 '''
 ---  I M P O R T  S T A T E M E N T S  ---
 '''
+import torch
 import os
+import json
 import gc
 import csv
 import time
 import coloredlogs, logging
 coloredlogs.install()
 import math
-import torch
 from . import metric
 from . import callback
 
@@ -44,7 +45,7 @@ class CSVWriter():
 
     def __init__(self, filename):
         self.filename = filename
-        self.fp = open(self.filename, 'w', encoding='utf8')
+        self.fp = open(self.filename, 'a', encoding='utf8')
         self.writer = csv.writer(self.fp, delimiter=';', quotechar='"', quoting=csv.QUOTE_ALL, lineterminator='\n')
 
     def close(self):
@@ -179,21 +180,19 @@ class static_model(object):
         # Data conversion
         data = data.float().cuda()
         target = target.cuda()
-
         # Create autograd Variables
-        input_var = torch.autograd.Variable(data)
-        target_var = torch.autograd.Variable(target)
+        #input_var = torch.autograd.Variable(data)
+        #target_var = torch.autograd.Variable(target)
 
         # Forward for training/evaluation
         if self.net.training:
-            output = self.net(input_var)
+            output = self.net(data)
         else:
             with torch.no_grad():
-                output = self.net(input_var)
-
+                output = self.net(data)
         # Use (loss) criterion if specified
         if hasattr(self, 'criterion') and self.criterion is not None and target is not None:
-            loss = self.criterion(output, target_var)
+            loss = self.criterion(output, target)
         else:
             loss = None
         return [output], [loss]
@@ -316,7 +315,7 @@ class model(static_model):
             logging.warning("Unknown kwargs: {}".format(kwargs))
 
         assert torch.cuda.is_available(), "only support GPU version"
-
+        torch.autograd.set_detect_anomaly(True)
 
         pause_sec = 0.
         train_loaders = {}
@@ -326,24 +325,25 @@ class model(static_model):
 
         # Create files to write results to
         if (directory is not None):
-            train_file = os.path.join(directory,'train_results.csv')
+            train_file = open(os.path.join(directory,'train_results.csv'),'w')
         else:
-            train_file = './train_results.csv'
-        train_writer = CSVWriter(train_file)
-        train_writer.write(('Epoch', 'Top1', 'Top5','Loss'))
+            train_file = open('./train_results.csv','w')
+        train_writer = csv.DictWriter(train_file, fieldnames=['Epoch', 'Top1', 'Top5','Loss'])
+        train_writer.writeheader()
 
         if (directory is not None):
-            val_file = os.path.join(directory,'val_results.csv')
+            val_file = open(os.path.join(directory,'val_results.csv'),'w')
         else:
-            val_file = './val_results.csv'
-        val_writer = CSVWriter(val_file)
+            val_file = open('./val_results.csv','w')
+        val_writer = csv.DictWriter(val_file, fieldnames=['Epoch', 'Top1', 'Top5','Loss'])
+        val_writer.writeheader()
         #val_writer = csv.writer(f_val, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        val_writer.write(('Epoch', 'Top1', 'Top5','Loss'))
+
 
         cycles = True
 
-
         for i_epoch in range(epoch_start, epoch_end):
+
 
             if (no_cycles):
                 logging.info('No cycles selected')
@@ -352,6 +352,7 @@ class model(static_model):
 
             self.callback_kwargs['epoch'] = i_epoch
             epoch_start_time = time.time()
+
 
             # values for writing average topk,loss in epoch
             train_top1_sum = []
@@ -439,15 +440,12 @@ class model(static_model):
 
 
                     try:
-                        if data is not None:
-                            del data
-                        if target is not None:
-                            del target
                         gc.collect()
                         sum_read_elapse = time.time()
-                        data,target = next(train_loaders[loader_id])
+                        data,target,_ = next(train_loaders[loader_id])
                         sum_read_elapse = time.time() - sum_read_elapse
-                    except:
+                    except Exception as e:
+                        logging.warning(e)
                         # Reinitialise if used up
                         logging.warning('Re-creating dataloader for batch of size ({},{},{},{})'.format(b,*batch_s))
                         # Ensure rendomisation
@@ -462,59 +460,71 @@ class model(static_model):
                         active_batches[loader_id]=batch_s
                         gc.collect()
                         sum_read_elapse = time.time()
-                        data,target = next(train_loaders[loader_id])
+                        data,target,_ = next(train_loaders[loader_id])
                         sum_read_elapse = time.time() - sum_read_elapse
 
 
                     gc.collect()
                 else:
                     sum_read_elapse = time.time()
-                    data,target = next(train_loader)
+                    data,target,_ = next(train_loader)
                     sum_read_elapse = time.time() - sum_read_elapse
 
                 self.callback_kwargs['batch'] = i_batch
 
-                # Catch Segmentation fault errors
+                # Catch Segmentation fault errors and nan grads
                 while True:
+                    forward = False
+                    backward = False
                     try:
                         # [forward] making next step
                         torch.cuda.empty_cache()
                         sum_forward_elapse = time.time()
                         outputs, losses = self.forward(data, target)
+                        sum_forward_elapse = time.time() - sum_forward_elapse
+                        forward = True
+
+                        # [backward]
+                        optimiser.zero_grad()
+                        sum_backward_elapse = time.time()
+                        for loss in losses:
+                            with amp.scale_loss(loss, optimiser) as scaled_loss:
+                                scaled_loss.backward()
+                            #loss.backward()
+                        sum_backward_elapse = time.time() - sum_backward_elapse
+                        lr = lr_scheduler.update()
+                        batch_size = tuple(data.size())
+                        self.adjust_learning_rate(optimiser=optimiser,lr=lr)
+                        optimiser.step()
+
+                        backward = True
                         break
+
                     except Exception as e:
                         # Create new data loader in the (rare) case of segmentation fault
+                        # Or nan loss
+                        logging.info(e)
+                        logging.warning('Error in forward/backward: forward executed: {} , backward executed: {}'.format(forward,backward))
                         logging.warning('Creating dataloader for batch of size ({},{},{},{})'.format(b,*batch_s))
                         train_iter.shuffle(i_epoch+i_batch+int(time.time()))
-                        train_loader = torch.utils.data.DataLoader(train_iter,batch_size=b, shuffle=True,num_workers=workers, pin_memory=False)
 
                         if loader_id in train_loaders:
                             del train_loaders[loader_id]
-                        train_loaders[loader_id]=iter(train_loader)
                         if loader_id in active_batches:
                             del active_batches[loader_id]
-                        active_batches[loader_id]=batch_s
+                        if loss in locals():
+                            del loss
+
                         gc.collect()
+                        optimiser.zero_grad()
+                        torch.cuda.empty_cache()
+                        train_loader = torch.utils.data.DataLoader(train_iter,batch_size=b, shuffle=True,num_workers=workers, pin_memory=False)
+                        train_loaders[loader_id]=iter(train_loader)
+                        active_batches[loader_id]=batch_s
                         sum_read_elapse = time.time()
-                        data,target = next(train_loaders[loader_id])
+                        data,target,_ = next(train_loaders[loader_id])
                         sum_read_elapse = time.time() - sum_read_elapse
                         gc.collect()
-
-                sum_forward_elapse = time.time() - sum_forward_elapse
-
-                # [backward]
-                optimiser.zero_grad()
-                sum_backward_elapse = time.time()
-                for loss in losses:
-                    with amp.scale_loss(loss, optimiser) as scaled_loss:
-                        scaled_loss.backward()
-
-                sum_backward_elapse = time.time() - sum_backward_elapse
-                lr = lr_scheduler.update()
-                batch_size = tuple(data.size())
-
-                self.adjust_learning_rate(optimiser=optimiser,lr=lr)
-                optimiser.step()
 
                 # [evaluation] update train metric
                 metrics.update([output.data.cpu() for output in outputs],
@@ -560,7 +570,7 @@ class model(static_model):
             train_top1_sum = sum(train_top1_sum)/l
             train_top5_sum = sum(train_top5_sum)/l
             train_loss_sum = sum(train_loss_sum)/l
-            train_writer.write((i_epoch, train_top1_sum, train_top5_sum,train_loss_sum))
+            train_writer.writerow({'Epoch':str(i_epoch), 'Top1':str(train_top1_sum), 'Top5':str(train_top5_sum),'Loss':str(train_loss_sum)})
             logging.info('Epoch [{:d}]  (train)  average top-1 acc: {:.5f}   average top-5 acc: {:.5f}   average loss: {:.5f}'.format(i_epoch,train_top1_sum,train_top5_sum,train_loss_sum))
 
             # Evaluation happens here
@@ -571,7 +581,10 @@ class model(static_model):
                 sum_read_elapse = time.time()
                 sum_forward_elapse = 0.
                 sum_sample_inst = 0
-                for i_batch, (data, target) in enumerate(eval_iter):
+                #accurac_dict = {} # (!!!) In order to use a per-class accuracy ensure that the batch size is 1
+
+                for i_batch, (data, target, path) in enumerate(eval_iter):
+
                     sum_read_elapse = time.time()
                     self.callback_kwargs['batch'] = i_batch
                     sum_forward_elapse = time.time()
@@ -588,6 +601,18 @@ class model(static_model):
                                    [loss.data.cpu() for loss in losses])
 
                     m = metrics.get_name_value()
+
+                    # Append rates
+                    '''
+                    label = path[0].split('/')[-2]
+                    if label in accurac_dict:
+                        accurac_dict[label]['acc'] += m[1][0][1]
+                        accurac_dict[label]['num'] += 1
+                    else:
+                        accurac_dict[label] = {'acc':m[1][0][1] , 'num':1}
+                    '''
+
+
                     val_top1_sum.append(m[1][0][1])
                     val_top5_sum.append(m[2][0][1])
                     val_loss_sum.append(m[0][0][1])
@@ -601,6 +626,14 @@ class model(static_model):
                         val_loss_avg = sum(val_loss_sum)/(i_batch+1)
                         logging.info('Epoch [{:d}]: Iteration [{:d}]:  (val)  average top-1 acc: {:.5f}   average top-5 acc: {:.5f}   average loss {:.5f}'.format(i_epoch,i_batch,val_top1_avg,val_top5_avg,val_loss_avg))
 
+                #for label in accurac_dict.keys():
+                #    accurac_dict[label]['acc'] /= accurac_dict[label]['num']
+                    #logging.info(label +' accuracy: '+str(accurac_dict[label]['acc']))
+
+                # Save to dictionary
+                #with open(os.path.join(directory,'class_accuracies_ep{:04d}.json'.format(i_epoch)), 'w') as jsonf:
+                #    json.dump(accurac_dict, jsonf)
+
                 # evaluation callbacks
                 self.callback_kwargs['read_elapse'] = sum_read_elapse / data.shape[0]
                 self.callback_kwargs['forward_elapse'] = sum_forward_elapse / data.shape[0]
@@ -611,7 +644,7 @@ class model(static_model):
                 val_top1_sum = sum(val_top1_sum)/l
                 val_top5_sum = sum(val_top5_sum)/l
                 val_loss_sum = sum(val_loss_sum)/l
-                val_writer.write((i_epoch, val_top1_sum, val_top5_sum,val_loss_sum))
+                val_writer.writerow({'Epoch':str(i_epoch), 'Top1':str(val_top1_sum), 'Top5':str(val_top5_sum),'Loss':str(val_loss_sum)})
                 logging.info('Epoch [{:d}]:  (val)  average top-1 acc: {:.5f}   average top-5 acc: {:.5f}   average loss {:.5f}'.format(i_epoch,val_top1_sum,val_top5_sum,val_loss_sum))
 
 

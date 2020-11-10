@@ -1,4 +1,7 @@
-# Learn to cycle: Time-consistent feature discovery for action recognition
+# Squeeze and Recursion Temporal gates
+### Code implementation for:
+- Learn to cycle: Time-consistent feature discovery for action recognition
+- Right on Time: Multi-Temporal Convolutions for Human Action Recognition in Videos
 
 ![supported versions](https://img.shields.io/badge/python-3.5%2C3.6-brightgreen/?style=flat&logo=python&color=green)
 ![Library](https://img.shields.io/badge/library-PyTorch-blue/?style=flat&logo=pytorch&color=informational)
@@ -9,6 +12,7 @@
 
 --------------------------------------------------------------------------------
 
+# Learn to cycle: Time-consistent feature discovery for action recognition
 ## Abstract
 Generalising over temporal variations is a prerequisite for effective action recognition in videos. Despite significant advances in deep neural networks, it remains a challenge to focus on short-term discriminative motions in relation to the overall performance of an action. We address this challenge by allowing some flexibility in discovering relevant spatio-temporal features. We introduce Squeeze and Recursion Temporal Gates (SRTG), an approach that favours inputs with similar activations with potential temporal variations. We implement this idea with a novel CNN block that uses an LSTM to encapsulate feature dynamics, in conjunction with a temporal gate that is responsible for evaluating the consistency of the discovered dynamics and the modeled features. We show consistent improvement when using SRTG blocks, with only a minimal increase in the number of GFLOPs. On Kinetics-700, we perform on par with current state-of-the-art models, and outperform these on HACS, Moments in Time, UCF-101 and HMDB-51 <p align="center">
 <i></i>
@@ -20,6 +24,24 @@ Generalising over temporal variations is a prerequisite for effective action rec
 <img src="./figures/Squeeze_and_Recursion_Proof_of_Concept.png" width="700" height="370" />
 <img src="./figures/SR.png" width="700" height="150" />
 </p>
+
+--------------------------------------------------------------------------------
+
+# Right on Time: Multi-Temporal Convolutions for Human Action Recognition inVideos
+## Abstract
+The variations in the temporal performance of human actions observed in videos present challenges for their extraction using fixed-sized convolution kernels in CNNs. We present an approach that is more flexible in terms of processing the input at multiple timescales. We introduce Multi-Temporal networks that model spatio-temporal patterns of different temporal durations at each layer. To this end, they employ novel 3D convolution (MTConv) blocks that consist of a short stream for local space-time features and a long stream for features spanning across longer times. By aligning features of each stream with respect to the global motion patterns using recurrent cells, we can discover temporally coherent spatio-temporal features with varying durations. We further introduce sub-streams within each of the block pathways to reduce the computation requirements.
+The proposed MTNet architectures outperform state-of-the-art 3D-CNNs on five action recognition benchmark datasets. Notably, we achieve at 87.22% top-1 accuracy on HACS, and 58.39% top-1 at Kinectics-700. We further demonstrate the favorable computational requirements. Using sub-streams, we can further achieve a drastic reduction in parameters (\~60%) and GLOPs (\~74%). Experiments using transfer learning finally verify the generalization capabilities of the multi-temporal features
+<p align="center">
+<i></i>
+<br>
+<a href="https://arxiv.org/pdf/2011.03949.pdf" target="bÂlank">[arXiv preprint]</a>
+
+
+<p align="center">
+<img src="./figures/passes.png" width="700" height="300" />
+
+
+--------------------------------------------------------------------------------
 
 ## Dependencies
 
@@ -40,7 +62,46 @@ $ pip install coloredlogs ffmpeg-python imgaug opencv-python torch torchvision y
 
 `Apex` can be downloaded based on the official [[github repo]](https://github.com/NVIDIA/apex)
 
-> If case for calculating FLOPs/GMACs yourself it's suggested to use Vladislav Sovrasov's repo [[link]](https://github.com/sovrasov/flops-counter.pytorch)
+> For calculating FLOPs/GMACs yourself it's suggested to use Vladislav Sovrasov's repo [[link]](https://github.com/sovrasov/flops-counter.pytorch)
+
+> You can also calculate the forward/backward pass latency with the following simple code snippet:
+
+```python
+import time
+  tmp = torch.rand(1,3,16,224,224).cuda()
+  #--- TEST 1 ---
+  net = srtg_r3d_101(num_classes=400).cuda()
+
+  tot_forwrd_inf = 0
+  tot_backward_inf = 0
+  count = 0
+
+  for epoch in range(0, 1000):
+
+      # Forward inference
+      torch.cuda.synchronize()
+      since = int(round(time.time()*1000))
+      output = net(tmp)
+      torch.cuda.synchronize()
+      time_elapsed = int(round(time.time()*1000)) - since
+
+      loss = torch.mean(output)
+
+      # Forward inference
+      torch.cuda.synchronize()
+      tsince = int(round(time.time()*1000))
+      loss.backward()
+      torch.cuda.synchronize()
+      ttime_elapsed = int(round(time.time()*1000)) - tsince
+
+      tot_forwrd_inf += time_elapsed
+      tot_backward_inf += ttime_elapsed
+      count +=1
+
+
+  print ('Forward  inference time elapsed {}ms'.format(tot_forwrd_inf/count))
+  print ('Backward inference time elapsed {}ms'.format(tot_backward_inf/count))
+```
 
 > ***! Disclaimer:*** This repository is heavily structurally influenced on Yunpeng Chen's MFNet repo [[link]](https://github.com/cypw/PyTorch-MFNet)
 
@@ -66,10 +127,10 @@ A custom format is used for all label files for each of the datasets. If using (
 
 We include training/data loading scripts for six action/video recognition datasets:
 
-- **Human Action Clips and Segments (HACS)** [[link]](http://hacs.csail.mit.edu/) : It includes a total of roughly 500K clip segments sampled over 50K videos. you can download the dataset  from [this link](http://hacs.csail.mit.edu/dataset/HACS_v1.1.1.zip), or alternatively visit the [project's website](http://hacs.csail.mit.edu/).
+- **Human Action Clips and Segments (HACS)** [[link]](http://hacs.csail.mit.edu/) : It includes a total of \~500K clip segments sampled over 50K videos. you can download the dataset  from [this link](http://hacs.csail.mit.edu/dataset/HACS_v1.1.1.zip), or alternatively visit the [project's website](http://hacs.csail.mit.edu/).
 - **Kinetics** [[link]](https://deepmind.com/research/open-source/kinetics): Composed of approximately 600K clips over 700 classes (with previously 400 \& 600) and each clip having an average duration of 10 seconds. You can download all three sets from [this link](https://storage.googleapis.com/deepmind-media/Datasets/kinetics700.tar.gz).
 - **Moments in Time (MiT)** [[link]](http://moments.csail.mit.edu/): Is composed of about 800K videos over 339 classes. Video durations are limited to 3 seconds. The labels can be downloaded from [the website](http://moments.csail.mit.edu/) after competing the form.
-- **UCF-101** [[link]](https://www.crcv.ucf.edu/data/UCF101.php): a smaller dataset of 13320 clips of 2~14 seconds. It includes a total of 101 action classes. The dataset can be downloaded in full from their website.
+- **UCF-101** [[link]](https://www.crcv.ucf.edu/data/UCF101.php): A dataset of 13320 clips of 2~14 seconds. It includes a total of 101 action classes. The dataset can be downloaded in full from their website.
 - **HMDB-51** [[link]](https://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/): The dataset includes a bit less than 10K video of 51 categories sampled from movies and series. The dataset can be downloaded directly from their website.
 - **Diving-48** [[link]](http://www.svcl.ucsd.edu/projects/resound/dataset.html): Composed of a total 18K videos of diving actions. The dataset can be downloaded from the project's website.
 
@@ -77,7 +138,7 @@ All three HACS, Kinetics and MiT datasets can be dowloaded through the [Activity
 
 #### Conversion to SQLite3 for speed optimisation
 
-As extracting videos to image format in a per-frame fashion we opt to used SQL databases for each of the videos. This effectively (1) limits the number of random read operations and (2) The number of _inodes_ used as individual image files (`.png`/`.jpeg`/etc.) increase the number of _inodes_ used significantly.
+Instead of extracting video frames to images we opt to use SQL databases for each of the videos. This effectively (1) limits the number of random read operations and (2) The number of _inodes_ used as individual image files (`.png`/`.jpeg`/etc.) increase the number of _inodes_ used significantly.
 
  **In total, the speed-up in reading times is close to ~1000x of that with conventional random-access image files**
 
@@ -89,7 +150,7 @@ As extracting videos to image format in a per-frame fashion we opt to used SQL d
 | SQL | **1.05e+6** | **8.07e+5**| **8.53e+4**| **4.69e+4**|
 
 
-All of the experiments were done with an AMD Threadripper 2950X over 24 workers. Disks used: 2x Samsung 970 Evo Plus (2TB \& 1TB).
+All of the experiments were done with an AMD Threadripper 2950X (128GB of RAM w/ 2666MHz) over 24 workers. Disks used: 2x Samsung 970 Evo Plus (2TB \& 1TB).
 
 *You can use the `dataset2databse` pypi [package](https://pypi.org/project/dataset2database/) or [repo](https://github.com/alexandrosstergiou/dataset2database) to convert videos to SQL*:
 ```
@@ -121,7 +182,7 @@ We assume a fixed directory formatting for both the data and the labels used. Th
 In the structure, any items enclosed in angle brackets should be changed to the correct dataset name, class names and video ids. The three standard elements that should remain the same across any dataset are:
 - **jpg**: The the container folder for all the classes in the dataset.
 
-- **frames.db**: The SQL database specific for each video that contains all the frames in the format of `ObjId`: which should be a string containing the video filepath alongside the frame number and `frames` that encapsulate all the data. The SQL table should also be called `Images`.
+- **frames.db**: The SQL database specific containing all the video frames in the format of `ObjId`: which should be a string containing the video filepath alongside the frame number and `frames` that encapsulate all the data. The SQL table should also be called `Images`.
 
 - **n_frames**: A file that should only include the number of frames for the video for quick access.
 
@@ -129,7 +190,7 @@ In the structure, any items enclosed in angle brackets should be changed to the 
 
 #### Data loading
 
-The main data loading takes place in `data/video_iterator.py` which you can see for more information, In all line 87~110 handle both connecting to the sql databases and loading. A densely commented version of those lines can be found below for more info:
+The main data loading takes place in `data/video_iterator.py` which you can see for more information. Lines 87~110 handle both connecting to the sql databases and loading. A densely commented version of those lines can be found below for more info:
 
 ```python
 con = sqlite3.connect('my_video_database.db')# Establishing connection
@@ -183,7 +244,8 @@ To increase generalisation capabilities of the models we further include video a
 #### Long-Short Cycles
 
 We additionally use a Multigrid training schedule for both improving generalisation and training times. Our implementation is based on the [Wu *et al.* paper](https://arxiv.org/abs/1912.00998). For convenience three `Dataloader` objects are used for every long cycle that correspond to changes in data for each short cycle.
-- In case of RAM constraints we suggest to either not use the Multigrid training implementation or decrease the number of workers at `train/model.py`
+- In case of RAM constraints we suggest to either not use the Multigrid training implementation or decrease the number of workers at `train/model.py`.
+- Ensure that you have at least 86GB of shared memory in your system.
 
 ## Usage
 
@@ -191,19 +253,19 @@ Training for each of the datasets is done through the homonym scripts.
 
 #### Examples
 
-**Training from scratch:** Training from scratch can be done by simply calling the script for the specific dataset. The two call argument that you **should** include are the `dataset` for the directory of the dataset and `network` for the architecture to train.
+**Training from scratch:** Training from scratch can be done by calling the script for corresponding dataset. The two call argument that you **should** include are the `dataset` for the directory of the dataset and `network` for the architecture to train.
 ```
-python train_hacs.py --network srtg_r3d_34 --dataset /media/alex/m2ssd_vol1/data/HACS_videos/ --clip-size 224 --gpus 4 --lr-base 0.1 --batch-size 48
+python train_hacs.py --network srtg_r3d_34 --dataset /media/usr/m2ssd_vol1/data/HACS_videos/ --clip-size 324 --gpus 4 --lr-base 0.1 --batch-size 48
 ```
 
 **Resuming training:** You can also resume training by loading previous states and specifying the epoch from which to continue after. You can specify the directory of the model to load weights from with `pretrained_3d`. You can load models from different disks with the absolute path. Secondly, you should specify the epoch from which to resume training from with `resume-epoch`.
 ```
-python train_hacs.py --network srtg_r3d_50 --dataset /media/alex/m2ssd_vol1/data/HACS_videos/ --clip-size 224 --gpus 4 --pretrained_3d results/HACS/srtg_r3d_50_gates_False/srtg_r3d_50_ep-0020.pth --resume-epoch 21 --lr-base 0.1 --batch-size 32
+python train_hacs.py --network srtg_r3d_50 --dataset /media/usr/m2ssd_vol1/data/HACS_videos/ --clip-size 256 --gpus 4 --pretrained_3d results/HACS/srtg_r3d_50_gates_False/srtg_r3d_50_ep-0020.pth --resume-epoch 21 --lr-base 0.1 --batch-size 32
 ```
 
 **Weight initialisation/Transfer learning:** It is possible to initialise weights or use pre-trained networks. Similarly to resuming training if the network architecture includes some variations (e.g. the number of class neurones), only the corresponding weights will be loaded. For transfer learning, you can additionally use the `fine-tune` call argument to decrease the learning rate used for convolution weights while maintaining the same base learning rate for the added layers.
 ```
-python train_kinetics.py --network srtg_r3d_34 --dataset /media/alex/m2ssd_vol1/data/Kinetics_videos/ --variant 700 --clip-size 224 --gpus 4 --pretrained_3d results/HACS/srtg_r3d_34_gates_False/srtg_r3d_34_ep-0080.pth --fine-tune True --lr-base 0.1 --batch-size 48
+python train_kinetics.py --network srtg_r3d_34 --dataset /media/usr/m2ssd_vol1/data/Kinetics_videos/ --variant 700 --clip-size 224 --gpus 4 --pretrained_3d results/HACS/srtg_r3d_34_gates_False/srtg_r3d_34_ep-0080.pth --fine-tune True --lr-base 0.1 --batch-size 48
 ```
 
 #### Calling arguments
@@ -246,7 +308,7 @@ The are some cases were additional arguments are used based on the structures or
 
 #### Pre-trained weights
 
-We are will be making the pre-trained SRTG models weights available along with oncoming repo updates.
+We are will be making the pre-trained SRTG/MTnet models weights available (note that models will be available only for `float16`).
 
 #### Switching from half to single point precision
 
@@ -284,7 +346,7 @@ Along scores, speed the batch size and learning rate are also monitored at each 
 
 ## Hardware specifications
 
-All experiments were run with 4x NVIDA 2080 Ti GPUs.
+All experiments were run with 4x NVIDA 2080 Ti GPUs with a shared memory of 128GB.
 
 ## Citation
 ```

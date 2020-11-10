@@ -73,14 +73,14 @@ def get_diving48(data_root=os.path.join('/media','user','disk0'),
                       video_size=(clip_length,clip_size,clip_size),
                       video_transform = transforms.Compose(
                           transforms=iaa.Sequential([
-                              iaa.Resize({"height": 294, "width": 294}),
+                              iaa.Resize({"shorter-side": 294, "longer-side":"keep-aspect-ratio"}),
                               iaa.CropToFixedSize(width=224, height=224, position='uniform'),
                               sometimes_seq(iaa.Sequential([
                                   sometimes_aug(iaa.GaussianBlur(sigma=[0.1,0.2,0.3])),
                                   sometimes_aug(iaa.Add((-5, 15), per_channel=True)),
-                                  sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
-                                  sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
-                                  sometimes_aug(iaa.MotionBlur([3,5,7])),
+                                  #sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
+                                  #sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
+                                  #sometimes_aug(iaa.MotionBlur([3,5,7])),
                                   sometimes_aug(iaa.AddToHueAndSaturation((-16, 16), per_channel=True)),
                                   sometimes_aug(iaa.LinearContrast((0.85, 1.115))),
                                   sometimes_aug(
@@ -114,7 +114,7 @@ def get_diving48(data_root=os.path.join('/media','user','disk0'),
                       video_size=(val_clip_length,val_clip_size,val_clip_size),
                       video_transform=transforms.Compose(
                                         transforms=iaa.Sequential([
-                                            iaa.Resize({"height": 296, "width": 296}),
+                                            iaa.Resize({"shorter-side": 294, "longer-side":"keep-aspect-ratio"}),
                                             iaa.CropToFixedSize(width=val_clip_size, height=val_clip_size, position='center')
                                         ]),
                                         normalise=[mean,std]),
@@ -174,20 +174,20 @@ def get_hmdb51(data_root=os.path.join('/media','user','disk0'),
     train_sampler = sampler.RandomSampling(num=clip_length, interval=train_interval, speed=[1.0, 1.0], seed=(seed+0))
 
     train = VideoIter(dataset_location = os.path.join(data_root, 'data', 'HMDB51_videos','jpg'),
-                      csv_filepath = os.path.join(data_root, 'labels', 'hmdb_split1_train.csv'),
+                      csv_filepath = os.path.join(data_root, 'labels', 'hmdb_split1_train_1.csv'),
                       include_timeslices = False,
                       sampler=train_sampler,
                       video_size=(clip_length,clip_size,clip_size),
                       video_transform = transforms.Compose(
                           transforms=iaa.Sequential([
-                              iaa.Resize({"height": 294, "width": 294}),
+                              iaa.Resize({"shorter-side": 294, "longer-side":"keep-aspect-ratio"}),
                               iaa.CropToFixedSize(width=224, height=224, position='uniform'),
                               sometimes_seq(iaa.Sequential([
                                   sometimes_aug(iaa.GaussianBlur(sigma=[0.1,0.2,0.3])),
                                   sometimes_aug(iaa.Add((-5, 15), per_channel=True)),
-                                  sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
-                                  sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
-                                  sometimes_aug(iaa.MotionBlur([3,5,7])),
+                                  #sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
+                                  #sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
+                                  #sometimes_aug(iaa.MotionBlur([3,5,7])),
                                   sometimes_aug(iaa.AddToHueAndSaturation((-16, 16), per_channel=True)),
                                   sometimes_aug(iaa.LinearContrast((0.85, 1.115))),
                                   sometimes_aug(
@@ -221,7 +221,7 @@ def get_hmdb51(data_root=os.path.join('/media','user','disk0'),
                       video_size=(val_clip_length,val_clip_size,val_clip_size),
                       video_transform=transforms.Compose(
                                         transforms=iaa.Sequential([
-                                            iaa.Resize({"height": 296, "width": 296}),
+                                            iaa.Resize({"shorter-side": 294, "longer-side":"keep-aspect-ratio"}),
                                             iaa.CropToFixedSize(width=val_clip_size, height=val_clip_size, position='center')
                                         ]),
                                         normalise=[mean,std]),
@@ -282,20 +282,20 @@ def get_ucf101(data_root=os.path.join('/media','user','disk0'),
                                            speed=[1.0, 1.0],
                                            seed=(seed+0))
     train = VideoIter(dataset_location=os.path.join(data_root, 'data', 'UCF101_videos','jpg'),
-                      csv_filepath=os.path.join(data_root, 'labels', 'ucf101_split1_train.csv'),
+                      csv_filepath=os.path.join(data_root, 'labels', 'ucf101_split1_train_1.csv'),
                       include_timeslices = False,
                       sampler=train_sampler,
                       video_size=(clip_length,clip_size,clip_size),
                       video_transform = transforms.Compose(
                           transforms=iaa.Sequential([
-                              iaa.Resize({"height": 294, "width": 294}),
+                              iaa.Resize({"shorter-side": 294, "longer-side":"keep-aspect-ratio"}),
                               iaa.CropToFixedSize(width=224, height=224, position='uniform'),
                               sometimes_seq(iaa.Sequential([
                                   sometimes_aug(iaa.GaussianBlur(sigma=[0.1,0.2,0.3])),
                                   sometimes_aug(iaa.Add((-5, 15), per_channel=True)),
-                                  sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
-                                  sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
-                                  sometimes_aug(iaa.MotionBlur([3,5,7])),
+                                  #sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
+                                  #sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
+                                  #sometimes_aug(iaa.MotionBlur([3,5,7])),
                                   sometimes_aug(iaa.AddToHueAndSaturation((-16, 16), per_channel=True)),
                                   sometimes_aug(iaa.LinearContrast((0.85, 1.115))),
                                   sometimes_aug(
@@ -328,7 +328,7 @@ def get_ucf101(data_root=os.path.join('/media','user','disk0'),
                       video_size=(val_clip_length,val_clip_size,val_clip_size),
                       video_transform=transforms.Compose(
                                         transforms=iaa.Sequential([
-                                            iaa.Resize({"height": 296, "width": 296}),
+                                            iaa.Resize({"shorter-side": 294, "longer-side":"keep-aspect-ratio"}),
                                             iaa.CropToFixedSize(width=val_clip_size, height=val_clip_size, position='center')
                                         ]),
                                         normalise=[mean,std]),
@@ -400,8 +400,10 @@ def get_kinetics(data_root=os.path.join('/media','user','disk0'),
         extension = '400'
     elif ('600' in name):
         extension = '600'
-    else:
+    elif ('700' in name):
         extension = '700'
+    else:
+        extension = '700_2020'
 
     train = VideoIter(dataset_location = os.path.join(data_root, 'data',
                       'Kinetics_videos','jpg'),
@@ -411,14 +413,14 @@ def get_kinetics(data_root=os.path.join('/media','user','disk0'),
                       video_size=(clip_length,clip_size,clip_size),
                       video_transform = transforms.Compose(
                           transforms=iaa.Sequential([
-                              iaa.Resize({"height": 294, "width": 294}),
-                              iaa.CropToFixedSize(width=224, height=224, position='uniform'),
+                              iaa.Resize({"shorter-side": 324, "longer-side":"keep-aspect-ratio"}),
+                              iaa.CropToFixedSize(width=clip_size, height=clip_size, position='uniform'),
                               sometimes_seq(iaa.Sequential([
                                   sometimes_aug(iaa.GaussianBlur(sigma=[0.1,0.2,0.3])),
                                   sometimes_aug(iaa.Add((-5, 15), per_channel=True)),
-                                  sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
-                                  sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
-                                  sometimes_aug(iaa.MotionBlur([3,5,7])),
+                                  #sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
+                                  #sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
+                                  #sometimes_aug(iaa.MotionBlur([3,5,7])),
                                   sometimes_aug(iaa.AddToHueAndSaturation((-16, 16), per_channel=True)),
                                   sometimes_aug(iaa.LinearContrast((0.85, 1.115))),
                                   sometimes_aug(
@@ -450,7 +452,7 @@ def get_kinetics(data_root=os.path.join('/media','user','disk0'),
                       video_size=(val_clip_length,val_clip_size,val_clip_size),
                       video_transform=transforms.Compose(
                                         transforms=iaa.Sequential([
-                                            iaa.Resize({"height": 296, "width": 296}),
+                                            iaa.Resize({"shorter-side": 294, "longer-side":"keep-aspect-ratio"}),
                                             iaa.CropToFixedSize(width=val_clip_size, height=val_clip_size, position='center')
                                         ]),
                                         normalise=[mean,std]),
@@ -520,14 +522,15 @@ def get_hacs(data_root=os.path.join('/media','user','disk0'),
                       video_size=(clip_length,clip_size,clip_size),
                       video_transform = transforms.Compose(
                           transforms=iaa.Sequential([
-                              iaa.Resize({"height": 294, "width": 294}),
-                              iaa.CropToFixedSize(width=224, height=224, position='uniform'),
+                              iaa.Resize({"shorter-side": 384, "longer-side":"keep-aspect-ratio"}),
+                              iaa.CropToFixedSize(width=384, height=384, position='center'),
+                              iaa.CropToFixedSize(width=clip_size, height=clip_size, position='uniform'),
                               sometimes_seq(iaa.Sequential([
                                   sometimes_aug(iaa.GaussianBlur(sigma=[0.1,0.2,0.3])),
                                   sometimes_aug(iaa.Add((-5, 15), per_channel=True)),
-                                  sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
-                                  sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
-                                  sometimes_aug(iaa.MotionBlur([3,5,7])),
+                                  sometimes_aug(iaa.AverageBlur(k=(1,2))),
+                                  sometimes_aug(iaa.Multiply((0.8, 1.2))),
+                                  sometimes_aug(iaa.GammaContrast((0.85,1.15),per_channel=True)),
                                   sometimes_aug(iaa.AddToHueAndSaturation((-16, 16), per_channel=True)),
                                   sometimes_aug(iaa.LinearContrast((0.85, 1.115))),
                                   sometimes_aug(
@@ -556,11 +559,12 @@ def get_hacs(data_root=os.path.join('/media','user','disk0'),
                       csv_filepath=os.path.join(data_root, 'labels', 'HACS_clips_v1.1_val.csv'),
                       include_timeslices = True,
                       sampler=val_sampler,
-                      video_size=(val_clip_length,val_clip_size,val_clip_size),
+                      video_size=(16,256,256),
                       video_transform=transforms.Compose(
                                         transforms=iaa.Sequential([
-                                            iaa.Resize({"height": 296, "width": 296}),
-                                            iaa.CropToFixedSize(width=val_clip_size, height=val_clip_size, position='center')
+                                            iaa.Resize({"shorter-side": 294, "longer-side":"keep-aspect-ratio"}),
+                                            iaa.CropToFixedSize(width=294, height=294, position='center'),
+                                            iaa.CropToFixedSize(width=256, height=256, position='center')
                                         ]),
                                         normalise=[mean,std]),
                       name='val')
@@ -625,20 +629,20 @@ def get_moments(data_root=os.path.join('/media','user','disk0'),
 
     train = VideoIter(dataset_location=os.path.join(data_root, 'data' ,
                       'Moments_in_Time_videos','jpg'),
-                      csv_filepath=os.path.join(data_root, 'labels', 'Moments_in_Time_train.csv'),
+                      csv_filepath=os.path.join(data_root, 'labels', 'Moments_in_Time_train_1.csv'),
                       include_timeslices = False,
                       sampler=train_sampler,
                       video_size=(clip_length,clip_size,clip_size),
                       video_transform = transforms.Compose(
                           transforms=iaa.Sequential([
-                              iaa.Resize({"height": 294, "width": 294}),
+                              iaa.Resize({"shorter-side": 294, "longer-side": "keep-aspect-ratio"}),
                               iaa.CropToFixedSize(width=224, height=224, position='uniform'),
                               sometimes_seq(iaa.Sequential([
                                   sometimes_aug(iaa.GaussianBlur(sigma=[0.1,0.2,0.3])),
                                   sometimes_aug(iaa.Add((-5, 15), per_channel=True)),
-                                  sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
-                                  sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
-                                  sometimes_aug(iaa.MotionBlur([3,5,7])),
+                                  #sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
+                                  #sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
+                                  #sometimes_aug(iaa.MotionBlur([3,5,7])),
                                   sometimes_aug(iaa.AddToHueAndSaturation((-16, 16), per_channel=True)),
                                   sometimes_aug(iaa.LinearContrast((0.85, 1.115))),
                                   sometimes_aug(
@@ -671,8 +675,8 @@ def get_moments(data_root=os.path.join('/media','user','disk0'),
                       video_size=(val_clip_length,val_clip_size,val_clip_size),
                       video_transform=transforms.Compose(
                                         transforms=iaa.Sequential([
-                                            iaa.Resize({"height": 296, "width": 296}),
-                                            iaa.CropToFixedSize(width=val_clip_size, height=val_clip_size, position='center')
+                                            iaa.Resize({"shorter-side": 294, "longer-side": "keep-aspect-ratio"}),
+                                            iaa.CenterCropToFixedSize(width=val_clip_size, height=val_clip_size)
                                         ]),
                                         normalise=[mean,std]),
                       name='val')

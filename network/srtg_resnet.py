@@ -7,6 +7,8 @@ import torch.nn as nn
 from torch.nn.modules.utils import _triple
 import torch.nn.functional as F
 
+#import softpool_cuda
+#from SoftPool import soft_pool3d, SoftPool3d
 
 '''
 ===  S T A R T  O F  C L A S S  C O N V 3 D S I M P L E ===
@@ -98,6 +100,138 @@ class Conv2Plus1D(nn.Sequential):
 
 
 '''
+===  S T A R T  O F  C L A S S  C O N V 3 D N O T E M P O R A L ===
+
+    [About]
+
+        nn.Sequential class for creating a 2D Convolution operations based on a 3D Conv wrapper used as a building block for the 3D CNN.
+
+    [Init Args]
+
+        - in_planes: Integer for the number of channels used as input.
+        - out_planes: Integer for the number of channels of the output.
+        - midplanes: None. Only used to ensure continouity with class `Conv2Plus1D`.
+        - stride: Integer for the kernel stride. Defaults to 1.
+        - padding: integer for zero pad. Defaults to 1.
+
+    [Methods]
+
+        - __init__ : Class initialiser
+        - __get_downsample_stride__ : Staticmethod that returns the stride based on which the volume will be downsampled through the conv operation
+
+'''
+class Conv3DNoTemporal(nn.Conv3d):
+
+    def __init__(self,
+                 in_planes,
+                 out_planes,
+                 midplanes=None,
+                 stride=1,
+                 padding=1):
+
+        super(Conv3DNoTemporal, self).__init__(
+            nn.Conv3d(in_planes, out_planes, kernel_size=(1, 3, 3),
+                      stride=(1, stride, stride), padding=(1, padding, padding),
+                      bias=False))
+
+    @staticmethod
+    def get_downsample_stride(stride):
+        return (1, stride, stride)
+'''
+===  E N D  O F  C L A S S  C O N V 3 D N O T E M P O R A L ===
+'''
+
+
+'''
+===  S T A R T  O F  C L A S S  C O N V 3 D D E P T H W I S E ===
+
+    [About]
+
+        nn.Sequential class for creating a 3D Depthwise Convolution operations used as a building block for the 3D CNN.
+
+    [Init Args]
+
+        - in_planes: Integer for the number of channels used as input.
+        - out_planes: Integer for the number of channels of the output.
+        - midplanes: None. Only used to ensure continouity with class `Conv2Plus1D`.
+        - stride: Integer for the kernel stride. Defaults to 1.
+        - padding: integer for zero pad. Defaults to 1.
+
+    [Methods]
+
+        - __init__ : Class initialiser
+        - __get_downsample_stride__ : Staticmethod that returns the stride based on which the volume will be downsampled through the conv operation
+
+'''
+class Conv3DDepthwise(nn.Sequential):
+    def __init__(self,
+                 in_planes,
+                 out_planes,
+                 midplanes=None,
+                 stride=1,
+                 padding=1):
+
+        super(Conv3DDepthwise, self).__init__(
+            nn.Conv3d(in_planes, out_planes, kernel_size=(3, 3, 3),
+                      stride=(stride, stride, stride), padding=(padding, padding, padding),
+                      groups=in_planes, bias=False))
+
+    @staticmethod
+    def get_downsample_stride(stride):
+        return (stride, stride, stride)
+'''
+===  S T A R T  O F  C L A S S  C O N V 3 D D E P T H W I S E ===
+'''
+
+
+'''
+===  S T A R T  O F  C L A S S  I P C O N V 3 D D E P T H W I S E ===
+
+    [About]
+
+        nn.Sequential class for creating interaction-preserving 3D Depthwise Convolution operations used as a building block for the 3D CNN.
+
+    [Init Args]
+
+        - in_planes: Integer for the number of channels used as input.
+        - out_planes: Integer for the number of channels of the output.
+        - midplanes: None. Only used to ensure continouity with class `Conv2Plus1D`.
+        - stride: Integer for the kernel stride. Defaults to 1.
+        - padding: integer for zero pad. Defaults to 1.
+
+    [Methods]
+
+        - __init__ : Class initialiser
+        - __get_downsample_stride__ : Staticmethod that returns the stride based on which the volume will be downsampled through the conv operation
+
+'''
+class IPConv3DDepthwise(nn.Sequential):
+    def __init__(self,
+                 in_planes,
+                 out_planes,
+                 midplanes=None,
+                 stride=1,
+                 padding=1):
+
+        assert in_planes == out_planes
+        super(IPConv3DDepthwise, self).__init__(
+            nn.Conv3d(in_planes, out_planes, kernel_size=(1,1,1), bias=False),
+            nn.BatchNorm3d(out_planes),
+            nn.ReLU(inplace=True),
+            Conv3DDepthwise(in_planes=out_planes, out_planes=out_planes, padding=1, stride=stride)
+        )
+
+    @staticmethod
+    def get_downsample_stride(stride):
+        return (stride, stride, stride)
+'''
+===  E N D  O F  C L A S S  I P C O N V 3 D D E P T H W I S E ===
+'''
+
+
+
+
+'''
 ===  S T A R T  O F  C L A S S  S Q U E E Z E _ A N D _ R E C U R S I O N ===
 
     [About]
@@ -132,12 +266,7 @@ class Squeeze_and_Recursion(nn.Module):
         self.gate = gates
 
 
-    def soft_nnc(embeddings1,embeddings2,check=1):
-
-        # Please keep this line for possible arithmetic underflows
-        embeddings1 = embeddings1.half().double() # for improved accuracy change `half()` to `float()`
-        embeddings2 = embeddings2.half().double() # but keep `double()` conversion regardless
-
+    def soft_nnc(self,embeddings1,embeddings2):
 
         # Assume inputs shapes of (batch x) x channels x frames x height x width
         dims_1 = embeddings1.shape
@@ -153,42 +282,43 @@ class Squeeze_and_Recursion(nn.Module):
                 embeddings2 = F.avg_pool3d(input=embeddings2, kernel_size=(1,dims_2[-2],dims_1[-1]))
             embeddings2=embeddings2.squeeze(-1).squeeze(-1)
 
-        # Embeddings 1 expansion: [batch x channels x frames] --> [frames x batch x channels x 1]
+
+        # embeddings1: [batch x channels x frames] --> [frames x batch x channels x 1]
         emb1 = embeddings1.permute(2,0,1).unsqueeze(-1)
 
-        # Embeddings 2 broadcasting: [batch x channels x frames] --> [frames x batch x channels x frames]
+        # embeddings2: [batch x channels x frames] --> [frames x batch x channels x frames]
         emb2 = embeddings2.unsqueeze(0).repeat(embeddings2.size()[-1],1,1,1)
 
-        # Eucledian distance calculation - summed over channels #[frames x batch x frames]
-        dist = torch.abs(emb2-emb1).pow(2).permute(0,1,3,2).sum(-1)
-        # Minimum (frame-based) indices selection for eucledian distance
-        idx_dist = dist.unsqueeze(0).argmin(-1)
+        # euclidian distance calculation
+        distances = torch.abs(emb1-emb2).pow(2)
 
-        # Softmax
-        exp_dist = torch.exp(dist)/torch.exp(torch.sum(dist,dim=-1)).unsqueeze(-1)
-        # Minimum (frame-based) indices selection for softmax distance
-        _, idx_exp = torch.min(exp_dist,dim=-1)
+        # Softmax calculation
+        softmax = torch.exp(distances)/torch.exp(torch.sum(distances,dim=-1)).unsqueeze(-1)
 
-        # Reshaping [frames x batch] --> [batch x frames]
-        idx_exp = idx_exp.permute(1,0)
+        # Soft nearest neighbour calculator (all frames)
+        soft_nn = torch.sum(softmax*emb2,dim=-1)
 
-        # Tensor of range(#frames): produces a sequence to be later compared with the discovered indices
-        idx_e2 = torch.tensor([i for i in range(dims_1[2])]).unsqueeze(0).repeat(dims_1[0],1)
+        # Permute [frames x batch x channels] --> [frames x batch x channels x 1]
+        soft_nn = soft_nn.unsqueeze(-1)
 
-        # Find matching sequences per batch
-        e1toe2 = torch.sum(idx_exp==idx_e2,dim=-1)==dims_1[2]
+        # Find points of soft nn in embeddings2
+        values,indices = torch.min(torch.abs(soft_nn-emb2).pow(2),dim=-1)
 
-        # recursion for cyclic-back
-        if check==2:
-            return e1toe2
-        else:
-            e2toe1 = soft_nnc(embeddings2,embeddings1,check=2)
+        indices = indices.permute(1,2,0)
+        values = values.permute(1,2,0)
 
-        # join together
-        conditions = e1toe2+e2toe1
+        # Get batch-wise T/F values
+        nearest_n = embeddings2.scatter_(2,indices,1.)
+        b_consistent = embeddings2 - nearest_n
 
-        # return only the batch indices
-        return torch.where(conditions==True)[0]
+        # [batch x channels x frames] --> [batch]
+        b_consistent = b_consistent.sum(-1).sum(-1)
+
+        # Non-zero elements are not consistent
+        b_consistent[b_consistent==0.] = 1.
+        b_consistent[b_consistent!=0.] = 0.
+
+        return b_consistent
 
 
     '''--- Function for finding the pair-wise euclidian distance between two embeddings in batches ---'''
@@ -257,8 +387,14 @@ class Squeeze_and_Recursion(nn.Module):
 
         # Use gates if specified
         if self.gate:
-            idx = self.soft_nnc(squeezed, sr)
-            x[idx] = x * sr.clone()
+            b1_indices = self.soft_nnc(squeezed, sr)
+            b2_indices = self.soft_nnc(sr, squeezed)
+            if torch.nonzero(b1_indices).size()[0] != 0 and torch.nonzero(b2_indices).size()[0] != 0 :
+                idx_1 = torch.nonzero(b1_indices).unsqueeze(-1)
+                idx_2 = torch.nonzero(b2_indices).unsqueeze(-1)
+                idx = self.intersect1d(idx_1,idx_2)
+                if torch.nonzero(idx).size()[0] != 0:
+                    x[idx] = x[idx] * sr.clone()[idx]
         else:
             x = x * sr.clone()
 
@@ -351,7 +487,7 @@ class BasicBlock(nn.Module):
     def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None, groups=1, base_width=64, place='final', recursion=False, gates=False):
         midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
-        assert (place in ['top','bottom','skip','final']), 'SAR block should be in either [`top`,`bottom`,`skip`,`final`]'
+        assert (place in ['top','mid','skip','final']), 'S&R block should be in either [`top`,`mid`,`skip`,`final`]'
 
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Sequential(
@@ -378,22 +514,23 @@ class BasicBlock(nn.Module):
     def forward(self, x):
         identity = x
 
+        out = self.conv1(x)
         if self.pos=='top' and self.recursion:
             out = self.sar(out)
-        out = self.conv1(x)
+        out = self.conv2(out)
         if self.pos=='mid' and self.recursion:
             out = self.sar(out)
-        out = self.conv2(out)
         if self.downsample is not None:
             identity = self.downsample(x)
             if self.pos=='skip' and self.recursion:
                 identity = self.sar(identity)
 
-
         out += identity
         out = self.relu(out)
+
         if self.pos=='final' and self.recursion:
             out = self.sar(out)
+
 
         return out
 '''
@@ -435,7 +572,7 @@ class Bottleneck(nn.Module):
     def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None, groups=1, base_width=64, place='final', recursion=False, gates=False):
 
         #assert (recursion == False and gates == True), 'Temporal Gates cannot be used in recursion is not enabled'
-        assert (place in ['start','top','mid','bottom','skip','final']), 'SAR block should be in either [`start`,`top`,`mid`,`bottom`,`skip`,`final`]'
+        assert (place in ['start','top','mid','bottom','skip','end','final']), 'S&R block should be in either [`start`,`top`,`mid`,`bottom`,`skip`,`end`,`final`]'
 
         super(Bottleneck, self).__init__()
         midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
@@ -505,7 +642,6 @@ class Bottleneck(nn.Module):
 
         out += identity
         out = self.relu(out)
-
 
         if self.pos=='final' and self.recursion:
             out = self.sar(out)
@@ -606,7 +742,7 @@ class VideoResNet(nn.Module):
 
     def __init__(self, block, conv_makers, layers,
                  stem, num_classes=400, groups=1, width_per_group=64,
-                 zero_init_residual=False, recursion=False, gates=False):
+                 zero_init_residual=False, recursion=False, gates=False, use_softpool=False):
 
         super(VideoResNet, self).__init__()
         self.inplanes = 64
@@ -614,6 +750,11 @@ class VideoResNet(nn.Module):
         self.base_width = width_per_group
 
         self.stem = stem()
+
+        if not use_softpool:
+            self.pool = nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
+        else:
+            self.pool = SoftPool3d(kernel_size=(2,2,2), stride=(2,2,2))
 
         self.layer1 = self._make_layer(block, conv_makers[0], 64, layers[0], stride=1, recursion=recursion, gates=gates)
 
@@ -636,6 +777,7 @@ class VideoResNet(nn.Module):
 
     def forward(self, x):
         x = self.stem(x)
+        x = self.pool(x)
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
@@ -694,6 +836,7 @@ class VideoResNet(nn.Module):
         function names.
 '''
 
+
 def r3d_18(**kwargs):
     return VideoResNet(block=BasicBlock,conv_makers=[Conv3DSimple]*4, layers=[2, 2, 2, 2], stem=BasicStem, **kwargs)
 
@@ -743,6 +886,30 @@ def wide_r3d101_2(pretrained=False, progress=True, **kwargs):
     return VideoResNet(block=Bottleneck,conv_makers=[Conv3DSimple]*4, layers=[3, 4, 23, 3], stem=BasicStem, **kwargs)
 
 
+def ir_csn_50(**kwargs):
+    return VideoResNet(block=Bottleneck,conv_makers=[Conv3DDepthwise]*4, layers=[3, 4, 6, 3], stem=BasicStem, **kwargs)
+
+
+def ir_csn_101(**kwargs):
+    return VideoResNet(block=Bottleneck,conv_makers=[Conv3DDepthwise]*4, layers=[3, 4, 23, 3], stem=BasicStem, **kwargs)
+
+
+def ir_csn_152(**kwargs):
+    return VideoResNet(block=Bottleneck,conv_makers=[Conv3DDepthwise]*4, layers=[3, 8, 36, 3], stem=BasicStem,**kwargs)
+
+
+def ip_csn_50(**kwargs):
+    return VideoResNet(block=Bottleneck,conv_makers=[IPConv3DDepthwise]*4, layers=[3, 4, 6, 3], stem=BasicStem, **kwargs)
+
+
+def ip_csn_101(**kwargs):
+    return VideoResNet(block=Bottleneck,conv_makers=[IPConv3DDepthwise]*4, layers=[3, 4, 23, 3], stem=BasicStem, **kwargs)
+
+
+def ip_csn_152(**kwargs):
+    return VideoResNet(block=Bottleneck,conv_makers=[IPConv3DDepthwise]*4, layers=[3, 8, 36, 3], stem=BasicStem,**kwargs)
+
+
 def srtg_r3d_18(**kwargs):
     return VideoResNet(block=BasicBlock,conv_makers=[Conv3DSimple]*4, layers=[2, 2, 2, 2], stem=BasicStem, recursion=True, gates=False,  **kwargs)
 
@@ -790,6 +957,30 @@ def srtg_wide_r3d50_2(pretrained=False, progress=True, **kwargs):
 def srtg_wide_r3d101_2(pretrained=False, progress=True, **kwargs):
     kwargs['width_per_group'] = 128
     return VideoResNet(block=Bottleneck,conv_makers=[Conv3DSimple]*4, layers=[3, 4, 23, 3], stem=BasicStem, recursion=True, gates=False, **kwargs)
+
+
+def srtg_ir_csn_50(**kwargs):
+    return VideoResNet(block=Bottleneck,conv_makers=[Conv3DDepthwise]*4, layers=[3, 4, 6, 3], stem=BasicStem, recursion=True, gates=False, **kwargs)
+
+
+def srtg_ir_csn_101(**kwargs):
+    return VideoResNet(block=Bottleneck,conv_makers=[Conv3DDepthwise]*4, layers=[3, 4, 23, 3], stem=BasicStem, recursion=True, gates=False, **kwargs)
+
+
+def srtg_ir_csn_152(**kwargs):
+    return VideoResNet(block=Bottleneck,conv_makers=[Conv3DDepthwise]*4, layers=[3, 8, 36, 3], stem=BasicStem, recursion=True, gates=False, **kwargs)
+
+
+def srtg_ip_csn_50(**kwargs):
+    return VideoResNet(block=Bottleneck,conv_makers=[IPConv3DDepthwise]*4, layers=[3, 4, 6, 3], stem=BasicStem, recursion=True, gates=False, **kwargs)
+
+
+def srtg_ip_csn_101(**kwargs):
+    return VideoResNet(block=Bottleneck,conv_makers=[IPConv3DDepthwise]*4, layers=[3, 4, 23, 3], stem=BasicStem, recursion=True, gates=False, **kwargs)
+
+
+def srtg_ip_csn_152(**kwargs):
+    return VideoResNet(block=Bottleneck,conv_makers=[IPConv3DDepthwise]*4, layers=[3, 8, 36, 3], stem=BasicStem, recursion=True, gates=False, **kwargs)
 
 
 def r2plus1d_18(**kwargs):

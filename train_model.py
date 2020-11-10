@@ -17,6 +17,7 @@ from train import metric
 from train.model import model
 from train.lr_scheduler import MultiFactorScheduler
 
+import apex
 from apex import amp
 from apex.parallel import DistributedDataParallel as DDP
 
@@ -133,6 +134,9 @@ def train_model(sym_net, name, model_prefix, input_conf,
     param_transpose_layers = []
     transpose_layers_mult = 1.0
 
+    param_rec_layers = []
+    rec_layers_mult = 1.0
+
     # Iterate over all parameters
     for name, param in net.net.named_parameters():
         if fine_tune:
@@ -140,7 +144,11 @@ def train_model(sym_net, name, model_prefix, input_conf,
                 param_transpose_layers.append(param)
                 transpose_layers_mult = .2
             elif name.lower().startswith('classifier'):
+                new_layers_mult = .1
                 param_new_layers.append(param)
+            elif ('lstm' or 'gru') in name.lower():
+                param_transpose_layers.append(param)
+                rec_layers_mult = .5
             else:
                 param_base_layers.append(param)
                 base_layers_mult = .6
@@ -149,6 +157,9 @@ def train_model(sym_net, name, model_prefix, input_conf,
             if 'transpose' in name.lower():
                 param_transpose_layers.append(param)
                 transpose_layers_mult = .8
+            elif ('lstm' or 'gru') in name.lower():
+                param_transpose_layers.append(param)
+                rec_layers_mult = 1.
             else:
                 param_new_layers.append(param)
 
@@ -162,6 +173,7 @@ def train_model(sym_net, name, model_prefix, input_conf,
     optimiser = torch.optim.SGD([
         {'params': param_base_layers, 'lr_mult': base_layers_mult},
         {'params': param_new_layers, 'lr_mult': new_layers_mult},
+        {'params': param_rec_layers, 'lr_mult': rec_layers_mult},
         {'params': param_transpose_layers, 'lr_mult': transpose_layers_mult},],
         lr=lr_base,
         momentum=0.9,
@@ -169,11 +181,12 @@ def train_model(sym_net, name, model_prefix, input_conf,
         nesterov=True
         )
 
-    # Use Apex for Mixed precidion
+    # Use Apex for Mixed precidion - Note: Please comment out any apex code on `train_model.py` and `model.py`
+    # in case you wish to switch back to standard float32. "O0" opt_level still has some bugs when also using DataParallel
     net.net, optimiser = amp.initialize(net.net, optimiser, opt_level="O1")
 
     # Create DataParallel wrapper
-    net.net = torch.nn.DataParallel(net.net).cuda()
+    net.net = torch.nn.DataParallel(net.net, device_ids=[i for i in range(int(gpus))])
 
     # load params from pretrained 3d network
     if pretrained_3d:
