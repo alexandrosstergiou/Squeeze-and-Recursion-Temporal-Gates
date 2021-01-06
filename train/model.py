@@ -302,7 +302,7 @@ class model(static_model):
             no_cycles,
             eval_iter=None,
             batch_shape=(24,16,224,224),
-            workers=24,
+            workers=4,
             metrics=metric.Accuracy(topk=1),
             iter_per_epoch=1000,
             epoch_start=0,
@@ -321,20 +321,21 @@ class model(static_model):
         train_loaders = {}
         active_batches = {}
 
-        workers= 8
+        workers= 4
+        n_workers = workers
 
         # Create files to write results to
         if (directory is not None):
-            train_file = open(os.path.join(directory,'train_results.csv'),'w')
+            train_file = open(os.path.join(directory,'train_results_s{0:04d}.csv'.format(epoch_start)),'w')
         else:
-            train_file = open('./train_results.csv','w')
+            train_file = open('./train_results_s{0:04d}.csv'.format(epoch_start),'w')
         train_writer = csv.DictWriter(train_file, fieldnames=['Epoch', 'Top1', 'Top5','Loss'])
         train_writer.writeheader()
 
         if (directory is not None):
-            val_file = open(os.path.join(directory,'val_results.csv'),'w')
+            val_file = open(os.path.join(directory,'val_results_s{0:04d}.csv'.format(epoch_start)),'w')
         else:
-            val_file = open('./val_results.csv','w')
+            val_file = open('./val_resultss{0:04d}.csv'.format(epoch_start),'w')
         val_writer = csv.DictWriter(val_file, fieldnames=['Epoch', 'Top1', 'Top5','Loss'])
         val_writer.writeheader()
         #val_writer = csv.writer(f_val, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -347,7 +348,7 @@ class model(static_model):
 
             if (no_cycles):
                 logging.info('No cycles selected')
-                train_loader = iter(torch.utils.data.DataLoader(train_iter,batch_size=batch_shape[0], shuffle=True,num_workers=workers, pin_memory=False))
+                train_loader = iter(torch.utils.data.DataLoader(train_iter,batch_size=batch_shape[0], shuffle=True,num_workers=n_workers, pin_memory=False))
                 cycles = False
 
             self.callback_kwargs['epoch'] = i_epoch
@@ -375,6 +376,7 @@ class model(static_model):
             batch_start_time = time.time()
             logging.debug("Start epoch {:d}:".format(i_epoch))
             for i_batch in range(iter_per_epoch):
+                if (i_batch % 50 == 0):time.sleep(5)
 
                 b = batch_shape[0]
                 t = batch_shape[1]
@@ -420,6 +422,12 @@ class model(static_model):
                 if (h%2 != 0): h+=1
                 if (w%2 != 0): w+=1
 
+                #if (b>1000):
+                #    n_workers = workers + 4
+                #elif (b>100):
+                #    n_workers = workers + 2
+
+
                 if cycles:
                     train_iter.size_setter(new_size=(t,h,w))
 
@@ -429,7 +437,7 @@ class model(static_model):
                         # Ensure rendomisation
                         train_iter.shuffle(i_epoch+i_batch)
                         # create dataloader corresponding to the created dataset.
-                        train_loader = torch.utils.data.DataLoader(train_iter,batch_size=b, shuffle=True,num_workers=workers, pin_memory=False)
+                        train_loader = torch.utils.data.DataLoader(train_iter,batch_size=b, shuffle=True,num_workers=n_workers, pin_memory=False)
                         if loader_id in train_loaders:
                             del train_loaders[loader_id]
                         train_loaders[loader_id]=iter(train_loader)
@@ -450,7 +458,7 @@ class model(static_model):
                         logging.warning('Re-creating dataloader for batch of size ({},{},{},{})'.format(b,*batch_s))
                         # Ensure rendomisation
                         train_iter.shuffle(i_epoch+i_batch)
-                        train_loader = torch.utils.data.DataLoader(train_iter,batch_size=b, shuffle=True,num_workers=workers, pin_memory=False)
+                        train_loader = torch.utils.data.DataLoader(train_iter,batch_size=b, shuffle=True,num_workers=n_workers, pin_memory=False)
 
                         if loader_id in train_loaders:
                             del train_loaders[loader_id]
@@ -518,7 +526,7 @@ class model(static_model):
                         gc.collect()
                         optimiser.zero_grad()
                         torch.cuda.empty_cache()
-                        train_loader = torch.utils.data.DataLoader(train_iter,batch_size=b, shuffle=True,num_workers=workers, pin_memory=False)
+                        train_loader = torch.utils.data.DataLoader(train_iter,batch_size=b, shuffle=True,num_workers=n_workers, pin_memory=False)
                         train_loaders[loader_id]=iter(train_loader)
                         active_batches[loader_id]=batch_s
                         sum_read_elapse = time.time()

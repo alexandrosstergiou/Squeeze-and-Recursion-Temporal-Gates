@@ -1,9 +1,9 @@
-# Squeeze and Recursion Temporal gates
+# Video Action Recognition pytorch
 ### Code implementation for:
 - Learn to cycle: Time-consistent feature discovery for action recognition [[pdf]](https://arxiv.org/abs/2006.08247)
 - Right on Time: Multi-Temporal Convolutions for Human Action Recognition in Videos [[pdf]](https://arxiv.org/abs/2011.03949)
 
-![supported versions](https://img.shields.io/badge/python-3.5%2C3.6-brightgreen/?style=flat&logo=python&color=green)
+![supported versions](https://img.shields.io/badge/python-(3.5--3.8)-brightgreen/?style=flat&logo=python&color=green)
 ![Library](https://img.shields.io/badge/library-PyTorch-blue/?style=flat&logo=pytorch&color=informational)
 ![GitHub license](https://img.shields.io/cocoapods/l/AFNetworking)
 ![Fork](https://img.shields.io/github/forks/alexandrosstergiou/Squeeze-and-Recursion-Temporal-Gates?style=social)
@@ -17,7 +17,7 @@
 Generalising over temporal variations is a prerequisite for effective action recognition in videos. Despite significant advances in deep neural networks, it remains a challenge to focus on short-term discriminative motions in relation to the overall performance of an action. We address this challenge by allowing some flexibility in discovering relevant spatio-temporal features. We introduce Squeeze and Recursion Temporal Gates (SRTG), an approach that favours inputs with similar activations with potential temporal variations. We implement this idea with a novel CNN block that uses an LSTM to encapsulate feature dynamics, in conjunction with a temporal gate that is responsible for evaluating the consistency of the discovered dynamics and the modeled features. We show consistent improvement when using SRTG blocks, with only a minimal increase in the number of GFLOPs. On Kinetics-700, we perform on par with current state-of-the-art models, and outperform these on HACS, Moments in Time, UCF-101 and HMDB-51 <p align="center">
 <i></i>
 <br>
-<a href="https://arxiv.org/pdf/2006.08247.pdf" target="blank">[arXiv preprint]</a>
+<a href="https://doi.org/10.1016/j.patrec.2020.11.012" target="blank">[Pattern Recognition Letters]</a>
 
 
 <p align="center">
@@ -307,8 +307,25 @@ The are some cases were additional arguments are used based on the structures or
 |`variant`| `train_kinetics.py` | Integer for the Kinetics dataset type to be used (e.g. Mini-Kinetics with 200 classes or 400, 600, 700)|
 
 #### Pre-trained weights
+(note that models are trained with `float16`, `float32` stability has not been testes).
+Table headers `network`, `clip-length`, `clip-size` and `batch-size` correspond to the script parameters used.
 
-We are will be making the pre-trained SRTG/MTnet models weights available (note that models will be available only for `float16`).
+##### Models trained on HACS
+
+Table headers (`network`, `clip-length`, `clip-size` and `batch-size`) correspond to passed arguments.
+
+| `network`  | `clip-length` | `clip-size` | `batch-size`  | Top-1 | Top-5 |                         Checkpoints                          |
+| :-----: | :--------: | :------: | :-----: | :-----: | :-----: | :----------------------------------------------------------: |
+| `srtg_r3d_32` | 16 | 264 | 32 | 78.599 | 93.569 | [`[link]`](https://drive.google.com/file/d/151WUMcAsEIRxYNhipGhbczKKNB1AYA_2/view?usp=sharing) |
+| `srtg_r3d_50` | 16 | 264 | 32 | 80.362 | 95.548 | [`[link]`](https://drive.google.com/file/d/17YUWmIy6MvrSv3JTsQLWIadxVgv9lGoc/view?usp=sharing) |
+| `srtg_r3d_101` | 16 | 264 | 32 | 81.659 | 96.326 | [`[link]`](https://drive.google.com/file/d/1ZwfCcfdzkNUZtid-JvDZTd1mV8KkRJxN/view?usp=sharing) |
+| `srtg_r2plus1d_50` | 16 | 264 | 32 | 83.774 | 96.560 | [`[link]`](https://drive.google.com/file/d/1CBL1bZ4_ayOvvqRFODOZC-CVjQ2LfM8H/view?usp=sharing) |
+| `srtg_r2plus1d_101` | 16 | 264 | 32 | 84.326 | 96.852 | [`[link]`](https://drive.google.com/file/d/1CBL1bZ4_ayOvvqRFODOZC-CVjQ2LfM8H/view?usp=sharing) |
+| `mtnet_xs` | 16 | 284 | 48 | 77.926 | 94.289 | [`[link]`](https://drive.google.com/file/d/1-EbE2dKmG61r8v467MJDWhC1d3nDPqAK/view?usp=sharing) |
+| `mtnet_s` | 16 | 284 | 48 | 80.712 | 95.182 | [`[link]`](https://drive.google.com/file/d/1wGXuiJPrhKg8N0SeP82gSnOwbP1HW8cL/view?usp=sharing) |
+| `mtnet_m` | 16 | 284 | 48 | 83.447 | 95.872 | [`[link]`](https://drive.google.com/file/d/160_xtXnBRaiz-1qG9Wxwh1JjUzpe5wq8/view?usp=sharing) |
+| `mtnet_l` | 16 | 284 | 48 | 86.574 | 96.658 | [`[link]`](https://drive.google.com/file/d/1uRXNVjpMWkfUTWFX4s4bl35QThysb5ut/view?usp=sharing) |
+
 
 #### Switching from half to single point precision
 
@@ -366,11 +383,15 @@ $ mount -o remount /dev/shm
 
 ## Citation
 ```
-@article{stergiou2020improved,
+@article{stergiou2021improved,
   title={Learn to cycle: Time-consistent feature discovery for action recognition},
   author={Stergiou, Alexandros and Poppe, Ronald},
-  journal={arXiv preprint arXiv:2006.08247},
-  year={2020}
+  journal = {Pattern Recognition Letters},
+  volume = {141},
+  pages = {1--7},
+  year = {2021},
+  issn = {0167-8655},
+  doi = {https://doi.org/10.1016/j.patrec.2020.11.012}
 }
 
 @article{stergiou2020right,

@@ -168,8 +168,7 @@ class Accuracy(EvalMetric):
 
             pred_topk = pred_topk.t()
             correct = pred_topk.eq(label.view(1, -1).expand_as(pred_topk))
-
-            self.sum_metric += float(correct.view(-1).float().sum(0, keepdim=True).numpy())
+            self.sum_metric += float(correct.reshape(-1).float().sum(0, keepdim=True).numpy())
             self.num_inst += label.shape[0]
 '''
 ===  E N D  O F  C L A S S  A C C U R A C Y  ===
@@ -276,7 +275,7 @@ if __name__ == "__main__":
     import torch
 
     # Test Accuracy
-    predicts = [torch.from_numpy(np.array([[0.3, 0.7], [0, 1.], [0.4, 0.6]]))]
+    predicts = [torch.from_numpy(np.array([[0.7, 0.3], [0, 1.], [0.4, 0.6]]))]
     labels   = [torch.from_numpy(np.array([   0,            1,          1 ]))]
     losses   = [torch.from_numpy(np.array([   0.3,       0.4,       0.5   ]))]
 
@@ -287,7 +286,7 @@ if __name__ == "__main__":
 
     acc = Accuracy()
 
-    acc.update(preds=predicts, labels=labels, losses=losses)
+    acc.update(preds=predicts, labels=labels, losses=losses, lr=0, batch_size=1)
 
     logging.info(acc.get())
 
@@ -296,7 +295,7 @@ if __name__ == "__main__":
                          Accuracy(topk=1, name="acc-top1"),
                          Accuracy(topk=2, name="acc-top2"),
                          )
-    metrics.update(preds=predicts, labels=labels, losses=losses)
+    metrics.update(preds=predicts, labels=labels, losses=losses, lr=0, batch_size=1)
 
     logging.info("------------")
     logging.info(metrics.get())

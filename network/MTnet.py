@@ -11,26 +11,87 @@ import softpool_cuda
 from SoftPool import soft_pool3d, SoftPool3d
 
 
+def temporal_cossim_pool(x):
 
-'''
-===  S T A R T  O F  C L A S S  S Q U E E Z E _ A N D _ R E C U R S I O N ===
+    #Get shape
+    dims = x.shape
 
-    [About]
+    # Calculate spatially global pooled tensor [batch x channels x frames x height x width] -> [batch x channels x frames x 1 x 1]
+    gp_x = F.avg_pool3d(x,kernel_size=(1,dims[-2],dims[-1])).squeeze(-1).squeeze(-1)
 
-        nn.Module class that created a SRTG block
+    # frame pair-wise cosine similarity: ceil(cos(f_{i},f_{i+1}),1e-4)**2
+    distances = F.cosine_similarity(x1=gp_x[...,:-1],x2=gp_x[...,1:],eps=1e-4).pow(2).unsqueeze(1)
+    triplet_distance_mean = F.avg_pool1d(distances,kernel_size=2,stride=1)
 
-    [Init Args]
+    # Topk cosine sim triplet indices
+    _,max_k = torch.topk(triplet_distance_mean.squeeze(1),k=math.floor(dims[-3]/2),largest=True,dim=-1)
+    # Correspondance with tensor X's indices
+    max_k += 1
+    max_k,_ = torch.sort(max_k,descending=False)
 
-        - planes: Integer for the number of channels used as input.
-        - type : String for the recurrent cell types to be used. Defaults to `gru`.
-        - layers: Integer for the number of layers in the recurrent sub-network. Defaults to 2.
+    # Change shape [batch x channels x frames x height x width] -> [batch x frames x channels x height x width]
+    x = x.permute(0,2,1,3,4)
+    # Batch-wise frame indices selection
+    x = x[torch.arange(x.shape[0])[:,None],max_k]
+    # Revert shape and return [batch x floor(frames/2) x channels x height x width] -> [batch x channels x sloor(frames/2) x height x width]
+    return x.permute(0,2,1,3,4)
 
-    [Methods]
 
-        - __init__ : Class initialiser
-        - forward: Function for the main sequence of operation execution.
+def soft_nnc(embeddings1,embeddings2):
 
-'''
+    # Assume inputs shapes of (batch x) x channels x frames x height x width
+    dims_1 = embeddings1.shape
+    dims_2 = embeddings2.shape
+
+    # Pooling Height and width to create frame-wise feature representation
+    if len(dims_1)>3:
+        if (dims_1[-1]>1 or dims_1[-2]>1):
+            embeddings1 = F.avg_pool3d(input=embeddings1, kernel_size=(1,dims_1[-2],dims_1[-1]))
+        embeddings1=embeddings1.squeeze(-1).squeeze(-1)
+    if len(dims_2)>3:
+        if (dims_2[-1]>1 or dims_2[-2]>1):
+            embeddings2 = F.avg_pool3d(input=embeddings2, kernel_size=(1,dims_2[-2],dims_1[-1]))
+        embeddings2=embeddings2.squeeze(-1).squeeze(-1)
+
+
+    # embeddings1: [batch x channels x frames] --> [frames x batch x channels x 1]
+    emb1 = embeddings1.permute(2,0,1).unsqueeze(-1)
+
+    # embeddings2: [batch x channels x frames] --> [frames x batch x channels x frames]
+    emb2 = embeddings2.unsqueeze(0).repeat(embeddings2.size()[-1],1,1,1)
+
+    # euclidian distance calculation
+    distances = torch.abs(emb1-emb2).pow(2)
+
+    # Softmax calculation
+    softmax = torch.exp(distances)/torch.exp(torch.sum(distances,dim=-1)).unsqueeze(-1)
+
+    # Soft nearest neighbour calculator (all frames)
+    soft_nn = torch.sum(softmax*emb2,dim=-1)
+
+    # Permute [frames x batch x channels] --> [frames x batch x channels x 1]
+    soft_nn = soft_nn.unsqueeze(-1)
+
+    # Find points of soft nn in embeddings2
+    values,indices = torch.min(torch.abs(soft_nn-emb2).pow(2),dim=-1)
+
+    indices = indices.permute(1,2,0)
+    values = values.permute(1,2,0)
+
+    # Get batch-wise T/F values
+    nearest_n = embeddings2.scatter_(2,indices,1.)
+    b_consistent = embeddings2 - nearest_n
+
+    # [batch x channels x frames] --> [batch]
+    b_consistent = b_consistent.sum(-1).sum(-1)
+
+    # Non-zero elements are not consistent
+    b_consistent[b_consistent==0.] = 1.
+    b_consistent[b_consistent!=0.] = 0.
+
+    return b_consistent
+
+
 class Squeeze_and_Recursion(nn.Module):
 
     def __init__(self, planes, type='gru', layers=2):
@@ -64,39 +125,8 @@ class Squeeze_and_Recursion(nn.Module):
         # [batch, channels, frames] -> [batch, channels, frames, 1, 1]
         x_glob = r_out.unsqueeze(-1).unsqueeze(-1)
         return x * x_glob.clone(), x_glob.clone()
-'''
-===  E N D  O F  C L A S S  S Q U E E Z E _ A N D _ R E C U R S I O N ===
-'''
 
 
-'''
-===  S T A R T  O F  C L A S S  M T C O N V  ===
-
-    [About]
-
-        nn.Module for creating a MT-Convolution.
-
-    [Init Args]
-
-        - in_planes: Integer for the number of channels used as input.
-        - out_planes: Integer for the number of channels of the output.
-        - kernel_size: Integer or Tuple for the kernel size to be used.
-        - rate: Float for the per channel usage between the short and long streams. Defaults to 0.5.
-        - stride: Integer for the kernel stride. Defaults to 1.
-        - padding: Integer for zero pad. Defaults to 1.
-        - groups: Integer for the number of groups (i.e. sub-streams to be used). Defaults to 1.
-        - bias: Boolean for using or not using a bias term.
-        - no_lateral: Boolean for enabling lateral connections from the short and long streams. Defaults to False.
-        - pool: String for the pooling type to be used (average or softpool). Defaults to `avg`.
-
-    [Methods]
-
-        - __init__ : Class initialiser
-        - forward: Function for the main sequence of operation execution.
-        - __get_downsample_stride__ : Staticmethod that returns the stride based on which the volume will be downsampled through the conv operation.
-        - _initialise_weights: Function for initialising the convolutional kernels in the MTConv module.
-
-'''
 class MTConv(nn.Module):
     def __init__(self, in_planes, out_planes, kernel_size, rate=0.5, stride=1, padding=0, groups=1, bias=False, no_lateral=False, pool='avg'):
 
@@ -189,6 +219,9 @@ class MTConv(nn.Module):
             else:
                 x_short2long = F.avg_pool3d(x_short,kernel_size=(1,2,2),stride=(1,2,2))
 
+            if (x_short2long.shape[2]>2):
+                x_short2long = temporal_cossim_pool(x_short2long)
+
 
             if (list(x_short2long.size())[2:] != list(x_long[0].size())[2:]):
                 t,h,w = list(x_long.size())[2:]
@@ -227,36 +260,9 @@ class MTConv(nn.Module):
             for m in bns:
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-'''
-===  E N D  O F  C L A S S  M T C O N V ===
-'''
 
 
 
-'''
-===  S T A R T  O F  C L A S S  M T B L O C K ===
-
-    [About]
-
-        nn.Module for creating a MTBlock.
-
-    [Init Args]
-
-        - in_planes: Integer for the number of channels used as input.
-        - planes: Integer for the number of channels of the output (if expansion == 1).
-        - stride: Integer for the kernel stride. Defaults to 1.
-        - downsample: nn.Module in the case that downsampling is to be used for the residual connection.
-        Defaults to None.
-        - groups: Integer for the number of groups (i.e. sub-streams to be used). Defaults to 1.
-        - base_width: Used to define the width of the bottleneck. Defaults to 64.
-        - rate: Float for the per channel usage between the short and long streams. Defaults to 0.875.
-
-    [Methods]
-
-        - __init__ : Class initialiser
-        - forward: Function for the main sequence of operation execution.
-
-'''
 class MTBlock(nn.Module):
     expansion = 1
 
@@ -372,26 +378,9 @@ class MTBlock(nn.Module):
         self.relu(out_long)
 
         return (out_short,out_long)
-'''
-===  E N D  O F  C L A S S  M T B L O C K ===
-'''
 
 
-'''
-===  S T A R T  O F  C L A S S  B A S I C S T E M ===
 
-    [About]
-
-        nn.Sequential Class for the initial 3D convolution.
-
-    [Init Args]
-
-        - None
-
-    [Methods]
-
-        - __init__ : Class initialiser
-'''
 class BasicStem(nn.Sequential):
     def __init__(self):
         super(BasicStem, self).__init__(
@@ -399,40 +388,15 @@ class BasicStem(nn.Sequential):
                       padding=(1, 3, 3), bias=False),
             nn.BatchNorm3d(64),
             nn.ReLU(inplace=True))
-'''
-===  E N D  O F  C L A S S  B A S I C S T E M ===
-'''
 
 
-'''
-===  S T A R T  O F  C L A S S  M T N E T ===
 
-    [About]
-
-        nn.Module for creating MTnet variants.
-
-    [Init Args]
-
-        - block: nn.Module used as building block.
-        - layers: List of Integers specifying the number of blocks per layer.
-        - num_classes: Integer for the dimension of the final FC layer. Defaults to 400.
-        - rate: Float for the per channel usage between the short and long streams. Defaults to 0.875.
-        - width_per_group: Integer for the number of channels that each group/sub-stream will have.
-        - zero_init_residual: Boolean for zero init bottleneck residual BN. Defaults to False.
-
-    [Methods]
-
-        - __init__ : Class initialiser
-        - forward: Function for performing the main sequence of operations.
-        - _make_layer: Function for creating a sequence (nn.Sequential) of layers.
-        - _initialise_weights: Function for weight initialisation.
-'''
-class MTnet(nn.Module):
+class MTNet(nn.Module):
 
     def __init__(self, block, layers, num_classes=400, groups=1, width_per_group=64,
                  zero_init_residual=False, r=.875):
 
-        super(MTnet, self).__init__()
+        super(MTNet, self).__init__()
         self.inplanes = 64
         self.groups = groups
         self.base_width = width_per_group
@@ -468,10 +432,13 @@ class MTnet(nn.Module):
             padding = (1,0,1,0,0,0) # pad last dim by (0, 1) and 2nd to last by (0, 1)
             x = F.pad(x, padding, 'replicate')
         x = self.pool(x)
+        x = temporal_cossim_pool(x)
 
         # Short/Long path creation
         x_short,x_long = torch.split(x,[self.init_planes_short,self.init_planes_long],dim=1)
         x_long = F.avg_pool3d(x_long, kernel_size=(1,2,2),stride=(1,2,2))
+        if (x_long.shape[2]>2):
+            x_long = temporal_cossim_pool(x_long)
 
         # group together
         x = (x_short, x_long.clone())
@@ -494,6 +461,7 @@ class MTnet(nn.Module):
         x = torch.cat([x_short,x_long],dim=1)
 
         # Flatten the layer to fc
+
         x = x.flatten(1)
         x = self.fc(x)
 
@@ -542,48 +510,45 @@ class MTnet(nn.Module):
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, MTConv):
                 m._initialise_weights()
-'''
-===  E N D  O F  C L A S S  M T N E T ===
-'''
 
 
-'''
----  S T A R T  O F  N E T W O R K  C R E A T I O N  F U N C T I O N S ---
-    [About]
-        All below functions deal with the creation of networks. Networks are specified based on their
-        function names.
-'''
-def MTNet_32(**kwargs):
-    return MTnet(block=MTBlock, layers=[2, 2, 2, 2], **kwargs)
-
-def MTNet_48(**kwargs):
-    return MTnet(block=MTBlock, layers=[2, 2, 5, 3], **kwargs)
-
-def MTNet_64(**kwargs):
-    return MTnet(block=MTBlock, layers=[3, 4, 6, 3], **kwargs)
-
-def MTNet_132(**kwargs):
-    return MTnet(block=MTBlock, layers=[3, 4, 23, 3], **kwargs)
-
-def MTNet_200(**kwargs):
-    return MTnet(block=MTBlock, layers=[3, 8, 36, 3], **kwargs)
-
-def MTNet_264(**kwargs):
-    return MTnet(block=MTBlock, layers=[3, 24, 36, 3], **kwargs)
 
 
-def MTNet_32_g8(**kwargs):
-    return MTnet(block=MTBlock, groups=8, layers=[2, 2, 2, 2], **kwargs)
 
-def MTNet_48_g8(**kwargs):
-    return MTnet(block=MTBlock, groups=8, layers=[2, 2, 5, 3], **kwargs)
+def MTNet_xs(**kwargs):
+    return MTNet(block=MTBlock, layers=[2, 2, 2, 2], **kwargs)
 
-def MTNet_64_g8(**kwargs):
-    return MTnet(block=MTBlock, groups=8, layers=[3, 4, 6, 3], **kwargs)
+def MTNet_s(**kwargs):
+    return MTNet(block=MTBlock, layers=[2, 2, 5, 3], **kwargs)
 
-def MTNet_132_g8(**kwargs):
-    return MTnet(block=MTBlock, groups=8, layers=[3, 4, 23, 3], **kwargs)
+def MTNet_m(**kwargs):
+    return MTNet(block=MTBlock, layers=[3, 4, 6, 3], **kwargs)
 
-'''
----  E N D  O F  N E T W O R K  C R E A T I O N  F U N C T I O N S ---
-'''
+def MTNet_l(**kwargs):
+    return MTNet(block=MTBlock, layers=[3, 4, 23, 3], **kwargs)
+
+def MTNet_xl(**kwargs):
+    return MTNet(block=MTBlock, layers=[3, 8, 36, 3], **kwargs)
+
+def MTNet_xxl(**kwargs):
+    return MTNet(block=MTBlock, layers=[3, 24, 36, 3], **kwargs)
+
+
+def MTNet_xs_g8(**kwargs):
+    return MTNet(block=MTBlock, groups=8, layers=[2, 2, 2, 2], **kwargs)
+
+def MTNet_s_g8(**kwargs):
+    return MTNet(block=MTBlock, groups=8, layers=[2, 2, 5, 3], **kwargs)
+
+def MTNet_m_g8(**kwargs):
+    return MTNet(block=MTBlock, groups=8, layers=[3, 4, 6, 3], **kwargs)
+
+def MTNet_l_g8(**kwargs):
+    return MTNet(block=MTBlock, groups=8, layers=[3, 4, 23, 3], **kwargs)
+
+
+if __name__ == "__main__":
+    tmp = torch.rand(1,3,8,100,100).cuda()
+    net = MTNet_xs(num_classes=10).cuda()
+    net(tmp)
+    print('Test completed successfully.')

@@ -27,7 +27,7 @@ from . import video_sampler as sampler
 
     [Args]
         - data_root: String containing the complete path of the dataset. Note that the path should correspond to
-        the parent path of where the dataset is. Defaults to `/media/user/disk0`.
+        the parent path of where the dataset is. Defaults to `/media/agstergiou/m2ssd_2TB`.
         - clip_length: Integer for the number of frames to sample per video. Defaults to 8.
         - clip_size: Integer for the width and height of the frames in the video. Defaults to 256.
         - val_clip_length: Integer for the number of frames in the validation clips. If None, they
@@ -45,7 +45,7 @@ from . import video_sampler as sampler
     [Returns]
         - Tuple for training VideoIter object and validation VideoIter object.
 '''
-def get_diving48(data_root=os.path.join('/media','user','disk0'),
+def get_diving48(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
                clip_length=8,
                clip_size=256,
                val_clip_length=None,
@@ -134,7 +134,7 @@ def get_diving48(data_root=os.path.join('/media','user','disk0'),
 
     [Args]
         - data_root: String containing the complete path of the dataset. Note that the path should correspond to
-        the parent path of where the dataset is. Defaults to `/media/user/disk0`.
+        the parent path of where the dataset is. Defaults to `/media/agstergiou/m2ssd_2TB`.
         - clip_length: Integer for the number of frames to sample per video. Defaults to 8.
         - clip_size: Integer for the width and height of the frames in the video. Defaults to 256.
         - val_clip_length: Integer for the number of frames in the validation clips. If None, they
@@ -152,7 +152,7 @@ def get_diving48(data_root=os.path.join('/media','user','disk0'),
     [Returns]
         - Tuple for training VideoIter object and validation VideoIter object.
 '''
-def get_hmdb51(data_root=os.path.join('/media','user','disk0'),
+def get_hmdb51(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
                clip_length=8,
                clip_size=256,
                val_clip_length=None,
@@ -241,7 +241,7 @@ def get_hmdb51(data_root=os.path.join('/media','user','disk0'),
 
     [Args]
         - data_root: String containing the complete path of the dataset. Note that the path should correspond to
-        the parent path of where the dataset is. Defaults to `/media/user/disk0`.
+        the parent path of where the dataset is. Defaults to `/media/agstergiou/m2ssd_2TB`.
         - clip_length: Integer for the number of frames to sample per video. Defaults to 8.
         - clip_size: Integer for the width and height of the frames in the video. Defaults to 256.
         - val_clip_length: Integer for the number of frames in the validation clips. If None, they
@@ -259,7 +259,7 @@ def get_hmdb51(data_root=os.path.join('/media','user','disk0'),
     [Returns]
         - Tuple for training VideoIter object and validation VideoIter object.
 '''
-def get_ucf101(data_root=os.path.join('/media','user','disk0'),
+def get_ucf101(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
                clip_length=8,
                clip_size=256,
                val_clip_length=None,
@@ -348,7 +348,7 @@ def get_ucf101(data_root=os.path.join('/media','user','disk0'),
 
     [Args]
         - data_root: String containing the complete path of the dataset. Note that the path should correspond to
-        the parent path of where the dataset is. Defaults to `/media/user/disk0`.
+        the parent path of where the dataset is. Defaults to `/media/agstergiou/m2ssd_2TB`.
         - name: String for the dataset name. This differs from the rest of the functions are multiple variants of
         kinetics can be used (Mini-Kinetics, K-400, K-600, K-700). Defaults to `KINETICS-700`.
         - clip_length: Integer for the number of frames to sample per video. Defaults to 8.
@@ -368,8 +368,8 @@ def get_ucf101(data_root=os.path.join('/media','user','disk0'),
     [Returns]
         - Tuple for training VideoIter object and validation VideoIter object.
 '''
-def get_kinetics(data_root=os.path.join('/media','user','disk0'),
-                 name = 'KINETICS-700',
+def get_kinetics(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
+                 name = 'KINETICS-700.2020',
                  clip_length=8,
                  clip_size=256,
                  val_clip_length=None,
@@ -396,31 +396,34 @@ def get_kinetics(data_root=os.path.join('/media','user','disk0'),
 
     if ('200' in name):
         extension = '200'
+        extension2 = '_1'
     elif ('400' in name):
         extension = '400'
+        extension2 = '_1'
     elif ('600' in name):
         extension = '600'
-    elif ('700' in name):
-        extension = '700'
+        extension2 = '_1'
     else:
-        extension = '700_2020'
+        extension = '700'
+        extension2 = '_2020_1'
 
     train = VideoIter(dataset_location = os.path.join(data_root, 'data',
                       'Kinetics_videos','jpg'),
-                      csv_filepath = os.path.join(data_root, 'labels', 'kinetics-'+extension+'_train.csv'),
+                      csv_filepath = os.path.join(data_root, 'labels', 'kinetics-'+extension+'_train'+extension2+'.csv'),
                       include_timeslices = True,
                       sampler=train_sampler,
                       video_size=(clip_length,clip_size,clip_size),
                       video_transform = transforms.Compose(
                           transforms=iaa.Sequential([
-                              iaa.Resize({"shorter-side": 324, "longer-side":"keep-aspect-ratio"}),
+                              iaa.Resize({"shorter-side": 384, "longer-side":"keep-aspect-ratio"}),
+                              iaa.CropToFixedSize(width=384, height=384, position='center'),
                               iaa.CropToFixedSize(width=clip_size, height=clip_size, position='uniform'),
                               sometimes_seq(iaa.Sequential([
                                   sometimes_aug(iaa.GaussianBlur(sigma=[0.1,0.2,0.3])),
                                   sometimes_aug(iaa.Add((-5, 15), per_channel=True)),
-                                  #sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
-                                  #sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
-                                  #sometimes_aug(iaa.MotionBlur([3,5,7])),
+                                  sometimes_aug(iaa.AverageBlur(k=(1,2))),
+                                  sometimes_aug(iaa.Multiply((0.8, 1.2))),
+                                  sometimes_aug(iaa.GammaContrast((0.85,1.15),per_channel=True)),
                                   sometimes_aug(iaa.AddToHueAndSaturation((-16, 16), per_channel=True)),
                                   sometimes_aug(iaa.LinearContrast((0.85, 1.115))),
                                   sometimes_aug(
@@ -449,14 +452,16 @@ def get_kinetics(data_root=os.path.join('/media','user','disk0'),
                       csv_filepath=os.path.join(data_root, 'labels', 'kinetics-'+extension+'_val.csv'),
                       include_timeslices = True,
                       sampler=val_sampler,
-                      video_size=(val_clip_length,val_clip_size,val_clip_size),
+                      video_size=(16,256,256),
                       video_transform=transforms.Compose(
                                         transforms=iaa.Sequential([
                                             iaa.Resize({"shorter-side": 294, "longer-side":"keep-aspect-ratio"}),
-                                            iaa.CropToFixedSize(width=val_clip_size, height=val_clip_size, position='center')
+                                            iaa.CropToFixedSize(width=294, height=294, position='center'),
+                                            iaa.CropToFixedSize(width=256, height=256, position='center')
                                         ]),
                                         normalise=[mean,std]),
                       name='val')
+
     return (train, val)
 '''
 ---  E N D  O F  F U N C T I O N  G E T _ K I N E T I C S  ---
@@ -471,7 +476,7 @@ def get_kinetics(data_root=os.path.join('/media','user','disk0'),
 
     [Args]
         - data_root: String containing the complete path of the dataset. Note that the path should correspond to
-        the parent path of where the dataset is. Defaults to `/media/user/disk0`.
+        the parent path of where the dataset is. Defaults to `/media/agstergiou/m2ssd_2TB`.
         - clip_length: Integer for the number of frames to sample per video. Defaults to 8.
         - clip_size: Integer for the width and height of the frames in the video. Defaults to 256.
         - val_clip_length: Integer for the number of frames in the validation clips. If None, they
@@ -489,7 +494,7 @@ def get_kinetics(data_root=os.path.join('/media','user','disk0'),
     [Returns]
         - Tuple for training VideoIter object and validation VideoIter object.
 '''
-def get_hacs(data_root=os.path.join('/media','user','disk0'),
+def get_hacs(data_root=os.path.join('/media','agstergiou','m2ssd_2TB'),
                  clip_length=8,
                  clip_size=256,
                  val_clip_length=None,
@@ -516,7 +521,7 @@ def get_hacs(data_root=os.path.join('/media','user','disk0'),
                                            seed=(seed+0))
 
     train = VideoIter(dataset_location=os.path.join(data_root, 'data' , 'HACS_videos','jpg'),
-                      csv_filepath=os.path.join(data_root, 'labels', 'HACS_clips_v1.1_train.csv'),
+                      csv_filepath=os.path.join(data_root, 'labels', 'HACS_clips_v1.1_train_1.csv'),
                       include_timeslices = True,
                       sampler=train_sampler,
                       video_size=(clip_length,clip_size,clip_size),
@@ -583,7 +588,7 @@ def get_hacs(data_root=os.path.join('/media','user','disk0'),
 
     [Args]
         - data_root: String containing the complete path of the dataset. Note that the path should correspond to
-        the parent path of where the dataset is. Defaults to `/media/user/disk0`.
+        the parent path of where the dataset is. Defaults to `/media/agstergiou/m2ssd_2TB`.
         - clip_length: Integer for the number of frames to sample per video. Defaults to 8.
         - clip_size: Integer for the width and height of the frames in the video. Defaults to 256.
         - val_clip_length: Integer for the number of frames in the validation clips. If None, they
@@ -601,7 +606,7 @@ def get_hacs(data_root=os.path.join('/media','user','disk0'),
     [Returns]
         - Tuple for training VideoIter object and validation VideoIter object.
 '''
-def get_moments(data_root=os.path.join('/media','user','disk0'),
+def get_moments(data_root=os.path.join('/media','agstergiou','m2ssd_1TB'),
                  clip_length=8,
                  clip_size=256,
                  val_clip_length=None,
@@ -627,7 +632,7 @@ def get_moments(data_root=os.path.join('/media','user','disk0'),
                                            speed=[1.0, 1.0],
                                            seed=(seed+0))
 
-    train = VideoIter(dataset_location=os.path.join(data_root, 'data' ,
+    train = VideoIter(dataset_location=os.path.join(data_root, 'data',
                       'Moments_in_Time_videos','jpg'),
                       csv_filepath=os.path.join(data_root, 'labels', 'Moments_in_Time_train_1.csv'),
                       include_timeslices = False,
@@ -635,14 +640,15 @@ def get_moments(data_root=os.path.join('/media','user','disk0'),
                       video_size=(clip_length,clip_size,clip_size),
                       video_transform = transforms.Compose(
                           transforms=iaa.Sequential([
-                              iaa.Resize({"shorter-side": 294, "longer-side": "keep-aspect-ratio"}),
-                              iaa.CropToFixedSize(width=224, height=224, position='uniform'),
+                              iaa.Resize({"shorter-side": 384, "longer-side":"keep-aspect-ratio"}),
+                              iaa.CropToFixedSize(width=384, height=384, position='center'),
+                              iaa.CropToFixedSize(width=clip_size, height=clip_size, position='uniform'),
                               sometimes_seq(iaa.Sequential([
                                   sometimes_aug(iaa.GaussianBlur(sigma=[0.1,0.2,0.3])),
                                   sometimes_aug(iaa.Add((-5, 15), per_channel=True)),
-                                  #sometimes_aug(iaa.AdditiveGaussianNoise(scale=0.03*255, per_channel=True)),
-                                  #sometimes_aug(iaa.pillike.EnhanceColor(factor=(1.2, 1.6))),
-                                  #sometimes_aug(iaa.MotionBlur([3,5,7])),
+                                  sometimes_aug(iaa.AverageBlur(k=(1,2))),
+                                  sometimes_aug(iaa.Multiply((0.8, 1.2))),
+                                  sometimes_aug(iaa.GammaContrast((0.85,1.15),per_channel=True)),
                                   sometimes_aug(iaa.AddToHueAndSaturation((-16, 16), per_channel=True)),
                                   sometimes_aug(iaa.LinearContrast((0.85, 1.115))),
                                   sometimes_aug(
@@ -659,6 +665,7 @@ def get_moments(data_root=os.path.join('/media','user','disk0'),
                       name='train',
                       shuffle_list_seed=(seed+2))
 
+
     # Only return train iterator
     if (val_clip_length is None and val_clip_size is None):
         return train
@@ -672,11 +679,11 @@ def get_moments(data_root=os.path.join('/media','user','disk0'),
                       csv_filepath=os.path.join(data_root, 'labels', 'Moments_in_Time_val.csv'),
                       include_timeslices = False,
                       sampler=val_sampler,
-                      video_size=(val_clip_length,val_clip_size,val_clip_size),
+                      video_size=(16,256,256),
                       video_transform=transforms.Compose(
                                         transforms=iaa.Sequential([
-                                            iaa.Resize({"shorter-side": 294, "longer-side": "keep-aspect-ratio"}),
-                                            iaa.CenterCropToFixedSize(width=val_clip_size, height=val_clip_size)
+                                            iaa.Resize({"shorter-side": 294, "longer-side":"keep-aspect-ratio"}),
+                                            iaa.CropToFixedSize(width=294, height=294, position='center')
                                         ]),
                                         normalise=[mean,std]),
                       name='val')
@@ -724,7 +731,7 @@ def create(name, batch_size, return_len=False, num_workers=24, **kwargs):
 
     val_loader = torch.utils.data.DataLoader(val,
         batch_size=batch_size, shuffle=False,
-        num_workers=8, pin_memory=False)
+        num_workers=4, pin_memory=False)
 
     return train,val_loader,train.__len__()
 
@@ -743,7 +750,7 @@ def create(name, batch_size, return_len=False, num_workers=24, **kwargs):
 
     val_loader = torch.utils.data.DataLoader(val,
         batch_size=batch_size, shuffle=False,
-        num_workers=8, pin_memory=False)
+        num_workers=4, pin_memory=False)
 
     if return_len:
         return(train_loader,val_loader,train.__len__())
