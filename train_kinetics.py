@@ -22,11 +22,11 @@ parser.add_argument('--dataset', default='Kinetics',
                     help="path to dataset")
 parser.add_argument('--clip-length', default=16,
                     help="define the length of each input sample.")
-parser.add_argument('--clip-size', default=256,
+parser.add_argument('--clip-size', default=284,
                     help="define the size of each input sample.")
-parser.add_argument('--train-frame-interval', type=int, default=[1,2,2,3],
+parser.add_argument('--train-frame-interval', type=int, default=[4,5,6],
                     help="define the sampling interval between frames.")
-parser.add_argument('--val-frame-interval', type=int, default=2,
+parser.add_argument('--val-frame-interval', type=int, default=5,
                     help="define the sampling interval between frames.")
 parser.add_argument('--task-name', type=str, default='',
                     help="name of current task, leave it empty for using folder name")
@@ -53,7 +53,7 @@ parser.add_argument('--fine-tune', type=bool, default=False,
                     help="resume training and then fine tune the classifier")
 parser.add_argument('--resume-epoch', type=int, default=-1,
                     help="resume train")
-parser.add_argument('--batch-size', type=int, default=16,
+parser.add_argument('--batch-size', type=int, default=32,
                     help="batch size")
 parser.add_argument('--long-cycles', type=bool, default=True,
                     help="Enebling long cycles for batches")
@@ -61,13 +61,13 @@ parser.add_argument('--short-cycles', type=bool, default=True,
                     help="Enebling short cycles for batches")
 parser.add_argument('--lr-base', type=float, default=0.05,
                     help="learning rate")
-parser.add_argument('--lr-steps', type=list, default=[30,60,75,90],
+parser.add_argument('--lr-steps', type=list, default=[40,70,95],
                     help="number of samples to pass before changing learning rate") # 1e6 million
 parser.add_argument('--lr-factor', type=float, default=0.1,
                     help="reduce the learning with factor")
 parser.add_argument('--save-frequency', type=float, default=1,
                     help="save once after N epochs")
-parser.add_argument('--end-epoch', type=int, default=10000,
+parser.add_argument('--end-epoch', type=int, default=130,
                     help="maxmium number of training epoch")
 parser.add_argument('--random-seed', type=int, default=1,
                     help='random seed (default: 1)')

@@ -25,9 +25,9 @@ parser.add_argument('--clip-length', default=16,
                     help="define the length of each input sample.")
 parser.add_argument('--clip-size', default=284,
                     help="define the size of each input sample.")
-parser.add_argument('--train-frame-interval', type=int, default=[1,2],
+parser.add_argument('--train-frame-interval', type=int, default=[3,4],
                     help="define the sampling interval between frames.")
-parser.add_argument('--val-frame-interval', type=int, default=2,
+parser.add_argument('--val-frame-interval', type=int, default=3,
                     help="define the sampling interval between frames.")
 parser.add_argument('--task-name', type=str, default='',
                     help="name of current task, leave it empty for using folder name")

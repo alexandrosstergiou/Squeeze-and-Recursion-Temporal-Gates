@@ -23,7 +23,7 @@ parser.add_argument('--dataset', default='HACS',
                     help="path to dataset")
 parser.add_argument('--clip-length', default=16,
                     help="define the length of each input sample.")
-parser.add_argument('--clip-size', default=256,
+parser.add_argument('--clip-size', default=284,
                     help="define the size of each input sample.")
 parser.add_argument('--train-frame-interval', type=int, default=[1,2],
                     help="define the sampling interval between frames.")
@@ -55,7 +55,7 @@ parser.add_argument('--fine-tune', type=bool, default=False,
                     help="resume training and then fine tune the classifier")
 parser.add_argument('--resume-epoch', type=int, default=-1,
                     help="resume train")
-parser.add_argument('--batch-size', type=int, default=16,
+parser.add_argument('--batch-size', type=int, default=48,
                     help="batch size")
 parser.add_argument('--long-cycles', type=bool, default=True,
                     help="Enebling long cycles for batches")
@@ -69,7 +69,7 @@ parser.add_argument('--lr-factor', type=float, default=0.1,
                     help="reduce the learning with factor")
 parser.add_argument('--save-frequency', type=float, default=1,
                     help="save once after N epochs")
-parser.add_argument('--end-epoch', type=int, default=100,
+parser.add_argument('--end-epoch', type=int, default=120,
                     help="maxmium number of training epoch")
 parser.add_argument('--random-seed', type=int, default=1,
                     help='random seed (default: 1)')
