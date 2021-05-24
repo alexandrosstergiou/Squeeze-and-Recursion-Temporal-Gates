@@ -1,7 +1,7 @@
 # Video Action Recognition pytorch
 ### Code implementation for:
 - Learn to cycle: Time-consistent feature discovery for action recognition [[pdf]](https://arxiv.org/abs/2006.08247)
-- Right on Time: Multi-Temporal Convolutions for Human Action Recognition in Videos [[pdf]](https://arxiv.org/abs/2011.03949)
+- Multi-Temporal Convolutions for Human Action Recognition in Videos [[pdf]](https://arxiv.org/abs/2011.03949)
 
 ![supported versions](https://img.shields.io/badge/python-(3.5--3.8)-brightgreen/?style=flat&logo=python&color=green)
 ![Library](https://img.shields.io/badge/library-PyTorch-blue/?style=flat&logo=pytorch&color=informational)
@@ -27,10 +27,9 @@ Generalising over temporal variations is a prerequisite for effective action rec
 
 --------------------------------------------------------------------------------
 
-# Right on Time: Multi-Temporal Convolutions for Human Action Recognition in Videos
+# Multi-Temporal Convolutions for Human Action Recognition in Videos
 ## Abstract
-The variations in the temporal performance of human actions observed in videos present challenges for their extraction using fixed-sized convolution kernels in CNNs. We present an approach that is more flexible in terms of processing the input at multiple timescales. We introduce Multi-Temporal networks that model spatio-temporal patterns of different temporal durations at each layer. To this end, they employ novel 3D convolution (MTConv) blocks that consist of a short stream for local space-time features and a long stream for features spanning across longer times. By aligning features of each stream with respect to the global motion patterns using recurrent cells, we can discover temporally coherent spatio-temporal features with varying durations. We further introduce sub-streams within each of the block pathways to reduce the computation requirements.
-The proposed MTNet architectures outperform state-of-the-art 3D-CNNs on five action recognition benchmark datasets. Notably, we achieve at 87.22% top-1 accuracy on HACS, and 58.39% top-1 at Kinectics-700. We further demonstrate the favorable computational requirements. Using sub-streams, we can further achieve a drastic reduction in parameters (\~60%) and GLOPs (\~74%). Experiments using transfer learning finally verify the generalization capabilities of the multi-temporal features
+Effective extraction of temporal patterns is crucial for the recognition of temporally varying actions in video. We argue that the fixed-sized spatio-temporal convolution kernels used in convolutional neural networks (CNNs) can be improved to extract informative motions that are executed at different time scales. To address this challenge, we present a novel convolution block that is capable of extracting spatio-temporal patterns at multiple temporal resolutions. Our proposed multi-temporal convolution (MTConv) blocks utilize two branches that focus on brief and prolonged spatio-temporal patterns, respectively. The extracted time-varying features are aligned in a third branch, with respect to global motion patterns through recurrent cells. The proposed blocks are lightweight and can be integrated into any 3D-CNN architecture. This introduces a substantial reduction in computational costs. Extensive experiments on Kinetics, Moments in Time and HACS action recognition benchmark datasets demonstrate competitive performance of MTConvs compared to the state-of-the-art with a significantly lower computational footprint.
 <p align="center">
 <i></i>
 <br>
@@ -47,20 +46,17 @@ The proposed MTNet architectures outperform state-of-the-art 3D-CNNs on five act
 
 Ensure that the following packages are installed in your machine:
 
-+ `apex`  (version >= 0.1)
 + `coloredlogs`  (version >= 14.0)
 + `ffmpeg-python`  (version >=0.2.0)
 + `imgaug`  (version >= 0.4.0)
 + `opencv-python`  (version >= 4.2.0.32)
-+ `torch` (version >= 1.4.0)
++ `torch` (version >= 1.9.0)
 + `youtube-dl` (version >= 2020.3.24)
 
 You can install all of the packages with the following command:
 ```
 $ pip install coloredlogs ffmpeg-python imgaug opencv-python torch torchvision youtube-dl
 ```
-
-`Apex` can be downloaded based on the official [[github repo]](https://github.com/NVIDIA/apex)
 
 > For calculating FLOPs/GMACs yourself it's suggested to use Vladislav Sovrasov's repo [[link]](https://github.com/sovrasov/flops-counter.pytorch)
 
@@ -321,15 +317,14 @@ Table headers (`network`, `clip-length`, `clip-size` and `batch-size`) correspon
 | `srtg_r3d_101` | 16 | 264 | 32 | 81.659 | 96.326 | [`[link]`](https://drive.google.com/file/d/1ZwfCcfdzkNUZtid-JvDZTd1mV8KkRJxN/view?usp=sharing) |
 | `srtg_r2plus1d_50` | 16 | 264 | 32 | 83.774 | 96.560 | [`[link]`](https://drive.google.com/file/d/1CBL1bZ4_ayOvvqRFODOZC-CVjQ2LfM8H/view?usp=sharing) |
 | `srtg_r2plus1d_101` | 16 | 264 | 32 | 84.326 | 96.852 | [`[link]`](https://drive.google.com/file/d/1CBL1bZ4_ayOvvqRFODOZC-CVjQ2LfM8H/view?usp=sharing) |
-| `mtnet_xs` | 16 | 284 | 48 | 77.926 | 94.289 | [`[link]`](https://drive.google.com/file/d/1-EbE2dKmG61r8v467MJDWhC1d3nDPqAK/view?usp=sharing) |
-| `mtnet_s` | 16 | 284 | 48 | 80.712 | 95.182 | [`[link]`](https://drive.google.com/file/d/1wGXuiJPrhKg8N0SeP82gSnOwbP1HW8cL/view?usp=sharing) |
-| `mtnet_m` | 16 | 284 | 48 | 83.447 | 95.872 | [`[link]`](https://drive.google.com/file/d/160_xtXnBRaiz-1qG9Wxwh1JjUzpe5wq8/view?usp=sharing) |
-| `mtnet_l` | 16 | 284 | 48 | 86.574 | 96.658 | [`[link]`](https://drive.google.com/file/d/1uRXNVjpMWkfUTWFX4s4bl35QThysb5ut/view?usp=sharing) |
+| `mtnet_s` | 16 | 256 | 64 | 80.712 | 95.182 | [`[link]`](https://drive.google.com/file/d/1wGXuiJPrhKg8N0SeP82gSnOwbP1HW8cL/view?usp=sharing) |
+| `mtnet_m` | 16 | 256 | 64 | 83.447 | 95.872 | [`[link]`](https://drive.google.com/file/d/160_xtXnBRaiz-1qG9Wxwh1JjUzpe5wq8/view?usp=sharing) |
+| `mtnet_l` | 16 | 256 | 64 | 86.574 | 96.658 | [`[link]`](https://drive.google.com/file/d/1uRXNVjpMWkfUTWFX4s4bl35QThysb5ut/view?usp=sharing) |
 
 
 #### Switching from half to single point precision
 
-We are currently using NVIDIA's [`apex`](https://github.com/NVIDIA/apex) PyTorch extension for training our models with mixed precision. By default we use Automatic Mixed Precision (amp) for simplicity with `opt_level` of `01`. This patches most of the PyTorch functions casting their types from `float32` -> `float16`. Exceptions include both SoftMax and Normalisation methods that are kept in `float32` instead.
+We are currently TRAIN models with mixed precision. Exceptions include both SoftMax and Normalisation methods that are kept in `float32` instead.
 
 ## Monitoring
 
@@ -394,11 +389,12 @@ $ mount -o remount /dev/shm
   doi = {https://doi.org/10.1016/j.patrec.2020.11.012}
 }
 
-@article{stergiou2020right,
-  title={Right on Time: Multi-Temporal Convolutions for Human Action Recognition in Videos},
-  author={Alexandros Stergiou and Ronald Poppe},
-  journal={arXiv preprint arXiv:2011.03949},
-  year={2020}
+@inproceedings{stergiou2021right,
+  title={Multi-Temporal Convolutions for Human Action Recognition in Videos},
+  author={Stergiou, Alexandros and Poppe, Ronald},
+  booktitle={International Joint Conference of Neural Networks (IJCNN)},
+  year={2021},
+  organization={IEEE}
 }
 ```
 
