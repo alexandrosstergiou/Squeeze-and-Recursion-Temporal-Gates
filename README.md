@@ -1,43 +1,13 @@
 # Video Action Recognition pytorch
 ### Code implementation for:
-- Learn to cycle: Time-consistent feature discovery for action recognition [[pdf]](https://arxiv.org/abs/2006.08247)
-- Multi-Temporal Convolutions for Human Action Recognition in Videos [[pdf]](https://arxiv.org/abs/2011.03949)
+- Learn to cycle: Time-consistent feature discovery for action recognition (Pattern Recognition Letters 2021) [[pdf]](https://arxiv.org/abs/2006.08247)
+- Multi-Temporal Convolutions for Human Action Recognition in Videos (IJCNN 2021) [[pdf]](https://arxiv.org/abs/2011.03949)
 
 ![supported versions](https://img.shields.io/badge/python-(3.5--3.8)-brightgreen/?style=flat&logo=python&color=green)
 ![Library](https://img.shields.io/badge/library-PyTorch-blue/?style=flat&logo=pytorch&color=informational)
 ![GitHub license](https://img.shields.io/cocoapods/l/AFNetworking)
 ![Fork](https://img.shields.io/github/forks/alexandrosstergiou/Squeeze-and-Recursion-Temporal-Gates?style=social)
 ![Star](https://img.shields.io/github/stars/alexandrosstergiou/Squeeze-and-Recursion-Temporal-Gates?style=social)
-
-
---------------------------------------------------------------------------------
-
-# Learn to cycle: Time-consistent feature discovery for action recognition
-## Abstract
-Generalising over temporal variations is a prerequisite for effective action recognition in videos. Despite significant advances in deep neural networks, it remains a challenge to focus on short-term discriminative motions in relation to the overall performance of an action. We address this challenge by allowing some flexibility in discovering relevant spatio-temporal features. We introduce Squeeze and Recursion Temporal Gates (SRTG), an approach that favours inputs with similar activations with potential temporal variations. We implement this idea with a novel CNN block that uses an LSTM to encapsulate feature dynamics, in conjunction with a temporal gate that is responsible for evaluating the consistency of the discovered dynamics and the modeled features. We show consistent improvement when using SRTG blocks, with only a minimal increase in the number of GFLOPs. On Kinetics-700, we perform on par with current state-of-the-art models, and outperform these on HACS, Moments in Time, UCF-101 and HMDB-51 <p align="center">
-<i></i>
-<br>
-<a href="https://doi.org/10.1016/j.patrec.2020.11.012" target="blank">[Pattern Recognition Letters]</a>
-
-
-<p align="center">
-<img src="./figures/Squeeze_and_Recursion_Proof_of_Concept.png" width="700" height="370" />
-<img src="./figures/SR.png" width="700" height="150" />
-</p>
-
---------------------------------------------------------------------------------
-
-# Multi-Temporal Convolutions for Human Action Recognition in Videos
-## Abstract
-Effective extraction of temporal patterns is crucial for the recognition of temporally varying actions in video. We argue that the fixed-sized spatio-temporal convolution kernels used in convolutional neural networks (CNNs) can be improved to extract informative motions that are executed at different time scales. To address this challenge, we present a novel convolution block that is capable of extracting spatio-temporal patterns at multiple temporal resolutions. Our proposed multi-temporal convolution (MTConv) blocks utilize two branches that focus on brief and prolonged spatio-temporal patterns, respectively. The extracted time-varying features are aligned in a third branch, with respect to global motion patterns through recurrent cells. The proposed blocks are lightweight and can be integrated into any 3D-CNN architecture. This introduces a substantial reduction in computational costs. Extensive experiments on Kinetics, Moments in Time and HACS action recognition benchmark datasets demonstrate competitive performance of MTConvs compared to the state-of-the-art with a significantly lower computational footprint.
-<p align="center">
-<i></i>
-<br>
-<a href="https://arxiv.org/pdf/2011.03949.pdf" target="bÂlank">[arXiv preprint]</a>
-
-
-<p align="center">
-<img src="./figures/passes.png" width="700" height="300" />
 
 
 --------------------------------------------------------------------------------
@@ -405,7 +375,5 @@ MIT
 ## Contact
 
 Alexandros Stergiou
-
-a dot g dot stergiou at uu dot nl (a.g.stergiou@uu.nl)
 
 Any queries or suggestions are much appreciated!
